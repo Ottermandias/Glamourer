@@ -276,7 +276,7 @@ public class StateEditor(
     public void ApplyDesign(object data, MergedDesign mergedDesign, ApplySettings settings)
     {
         var state = (ActorState)data;
-        modApplier.HandleStateApplication(state, mergedDesign, settings.Source, true, settings.RespectManual);
+        modApplier.HandleStateApplication(state, mergedDesign, settings.Source, true, settings.RespectManual, settings.ForceModAssociations);
         if (!Editor.ChangeModelId(state, mergedDesign.Design.DesignData.ModelId, mergedDesign.Design.DesignData.Customize,
                 mergedDesign.Design.GetDesignDataRef().GetEquipmentPtr(), settings.Source, out var oldModelId, settings.Key))
             return;
@@ -407,16 +407,15 @@ public class StateEditor(
 
             if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes is not 0)
             {
-                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(ModelCombinedSlotsExtensions.All))
                     state.Materials.Clear();
                 else
                 {
                     var slotsToReset = mergedDesign.ResetAdvancedDyes;
                     while (slotsToReset is not 0)
                     {
-                        // Extract the least significant bit.
-                        // Do not attempt to work on a range of bits, as contiguous bits can yield very different material value indices.
-                        var slot = unchecked(slotsToReset & (~slotsToReset + 1));
+                        // TODO 20260824 Consider working on bit ranges to improve performance?
+                        var slot = slotsToReset.First;
                         state.Materials.RemoveValues(MaterialValueIndex.Min(slot), MaterialValueIndex.Max(slot));
                         slotsToReset &= ~slot;
                     }
@@ -507,7 +506,7 @@ public class StateEditor(
 
         var mh = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
         // Do not change Shields to nothing.
-        if (mh.Type is FullEquipType.Sword)
+        if (mh.Type is FullEquipType.Sword or FullEquipType.Handaxe)
             return;
 
         var offhand = newMainhand != null ? Items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);

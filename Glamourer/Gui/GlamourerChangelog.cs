@@ -50,6 +50,8 @@ public sealed class GlamourerChangelog : IUiService
         AddDummy(Changelog);
         Add1_6_0_0(Changelog);
         Add1_6_1_0(Changelog);
+        AddDummy(Changelog);
+        Add1_7_1_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -70,11 +72,59 @@ public sealed class GlamourerChangelog : IUiService
         }
     }
 
+    private static void Add1_7_1_0(Changelog log)
+        => log.NextVersion("Version 1.7.1.0"u8)
+            .RegisterHighlight("Added support for Beastmaster job groups and weapons."u8)
+            .RegisterEntry("Made hand axes a compatible weapon type with one handed swords, so BST and GLA/PLD can use each others main hand weapons."u8, 1)
+            .RegisterHighlight("Improved filtering and sorting of the actor tab."u8)
+            .RegisterHighlight("Added a text command to update an existing design with an actor's state."u8)
+            .RegisterHighlight("Added the option to manipulate the advanced dyes of the remaining slots (Thanks Ny!)."u8)
+            .RegisterEntry(
+                "Generally, those slots have no materials to edit, unless they have accessories (in case of hairstyles) or are modded."u8, 1)
+            .RegisterEntry(
+                "Face, Hair, and Ear or Tail advanced dyes can be edited on the actor tab via advanced dye buttons, as well as in designs directly."u8,
+                1)
+            .RegisterEntry(
+                "Connector and Body slots can only be added and edited directly in designs for the moment, but there is nothing to edit for them in general, unmodded situations."u8,
+                1)
+            .RegisterHighlight("Added Exposure, Anisotropy, the Sphere Map index, and the Sphere Map Intensity to advanced dyes in the Extra category (Thanks Ny!)."u8)
+            .RegisterEntry("Glamourer can now use Penumbra-style presets to store for its mod associations, which will allow it more flexibility in what options it applies later when UI work for that is done."u8)
+            .RegisterEntry("Added the option to change the global sort mode for the design selector to its main context menu."u8)
+            .RegisterEntry("Updated color handling with dependent colors, better defaults and categorized colors."u8)
+            .RegisterEntry("Added application rules to some chat commands."u8)
+            .RegisterEntry("Added the option to give random designs in automation sets display names to distinguish multiple of them."u8)
+            .RegisterEntry("Added the option to have color-alternating folder lines, and choose their colors in their corresponding folder settings."u8)
+            .RegisterEntry("Added the option to have display names for folders independent of their path."u8)
+            .RegisterEntry("Fixed an issue where configuration files were saved unnecessarily on launch."u8)
+            .RegisterEntry("Added configurable colors for the Add- and Remove buttons for predefined tags."u8)
+            .RegisterEntry("Fixed an issue with Viera Ear state application."u8)
+            .RegisterEntry("Fixed an issue with the Reset All Advanced Dyes button inside an Advanced Dye table."u8)
+            .RegisterEntry("Fixed that 'Apply Character State' and 'Revert Design Application' did not consider advanced customizations and dyes correctly."u8)
+            .RegisterEntry("Fixed the application of mod associations when using chat commands."u8)
+            .RegisterEntry("Fixed issues in the fun module where race changes were not taken into account."u8)
+            .RegisterEntry("Fixed Glamourers hat state affecting the checksum used for portraits."u8)
+            .RegisterEntry("Fixed the application of the second dye in the context menu try-on (thanks Ny!)."u8)
+            .RegisterEntry("Fixed issues with transformations like reaper form and advanced dyes."u8)
+            .RegisterEntry("Fixed several issues with advanced dye states."u8)
+            .RegisterEntry("Added API and IPC to manage navigation of Glamourer (1.6.1.7)."u8)
+            .RegisterEntry("Added the option to right-click the advanced dyes button to remove all advanced dyes on that slot (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with advanced dyes not clearing from IPC application (thanks UniversalConquistador!) (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with infinity values in advanced dyes (1.6.1.7)."u8)
+            .RegisterEntry("Fixed missing labels if no application rules are shown (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with bonus items on head slots and vice versa (1.6.1.7)."u8)
+            .RegisterEntry("Added a chat command to toggle the equipment bar (1.6.1.5)."u8)
+            .RegisterEntry("Fixed issues with offhand application when applying designs (1.6.1.5)."u8)
+            .RegisterEntry("Fixed issue with drag & drop on the equipment bar (1.6.1.5)."u8)
+            .RegisterEntry("Fixed several issues with resetting advanced dyes (1.6.1.5)."u8)
+            .RegisterEntry("Fixed an issue when sorting for inverse update dates (1.6.1.3)."u8)
+            .RegisterEntry("Fixed Several issues with application of compatible weapon types in automation (1.6.1.3)."u8);
+
     private static void Add1_6_1_0(Changelog log)
         => log.NextVersion("Version 1.6.1.0"u8)
             .RegisterHighlight("Glamourer has been updated for game version 7.50 and Dalamud API 15."u8)
             .RegisterEntry(
-                "The game entirely removed the specular advanced customization options for skin- and hair color, which were already removed from visible editing in Glamourer. This is probably in preparation for the changes in 8.0. This means it is very unlikely for them to come back."u8, 1)
+                "The game entirely removed the specular advanced customization options for skin- and hair color, which were already removed from visible editing in Glamourer. This is probably in preparation for the changes in 8.0. This means it is very unlikely for them to come back."u8,
+                1)
             .RegisterHighlight(
                 "Added an Automation Test Window that can check your automation sets against a job or gearset to see which design applies which changes."u8)
             .RegisterEntry("The Unlocks tab has been renamed to the Item Log tab."u8)

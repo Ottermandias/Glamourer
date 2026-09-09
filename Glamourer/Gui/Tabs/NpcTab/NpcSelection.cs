@@ -30,7 +30,7 @@ public sealed class NpcSelection : IUiService, IDisposable
         if (!HasSelection)
             return;
 
-        Color = _data.GetData(Data).Color.ToVector();
+        _data.GetData(Data).Color.ToVector();
     }
 
     private void OnDataChanged()
@@ -41,16 +41,15 @@ public sealed class NpcSelection : IUiService, IDisposable
         ColorText             = _data.GetColor(Data);
         ColorTextU8           = ColorText.Length is 0 ? DesignColors.AutomaticNameU8 : new StringU8(ColorText);
         (var color, Favorite) = _data.GetData(Data);
-        Color                 = color.ToVector();
+        color.ToVector();
     }
 
     public NpcData  Data { get; private set; }
     public StringU8 Name { get; private set; } = StringU8.Empty;
 
-    public bool     Favorite    { get; private set; } = false;
+    public bool     Favorite    { get; private set; }
     public string   ColorText   { get; private set; } = string.Empty;
     public StringU8 ColorTextU8 { get; private set; } = DesignColors.AutomaticNameU8;
-    public Vector4  Color       { get; private set; }
 
     public uint Id
         => Data.Id;
@@ -80,7 +79,7 @@ public sealed class NpcSelection : IUiService, IDisposable
         return _converter.Convert(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
     }
 
-    public string ToBase64()
+    public byte[] ToBase64()
     {
         var data = ToDesignData();
         return _converter.ShareBase64(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
@@ -93,7 +92,6 @@ public sealed class NpcSelection : IUiService, IDisposable
         Favorite            = item.Favorite;
         ColorText           = item.ColorText;
         ColorTextU8         = ColorText.Length > 0 ? new StringU8(ColorText) : DesignColors.AutomaticNameU8;
-        Color               = item.Color;
         _config.SelectedNpc = Data.Id;
     }
 
@@ -116,6 +114,6 @@ public sealed class NpcSelection : IUiService, IDisposable
         ColorText             = _data.GetColor(npc);
         ColorTextU8           = ColorText.Length is not 0 ? new StringU8(ColorText) : DesignColors.AutomaticNameU8;
         (var color, Favorite) = _data.GetData(npc);
-        Color                 = color.ToVector();
+        color.ToVector();
     }
 }

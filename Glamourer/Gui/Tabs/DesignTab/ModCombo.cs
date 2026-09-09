@@ -1,32 +1,33 @@
 ﻿using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
+using Penumbra.Api.Preset;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSystem) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
+public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileSystem) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
 {
-    public readonly struct CacheItem(in Mod mod, in ModSettings settings, int count)
+    public readonly struct CacheItem(in ModIdentifier mod, in SettingPresetData settings, int count)
     {
-        public readonly StringPair  Name      = new(mod.Name);
-        public readonly StringPair  Directory = new(mod.DirectoryName);
-        public readonly ModSettings Settings  = settings;
-        public readonly int         Count     = count;
+        public readonly StringPair        Name      = new(mod.Name);
+        public readonly StringPair        Directory = new(mod.Identifier);
+        public readonly SettingPresetData Settings  = settings;
+        public readonly int               Count     = count;
 
-        public readonly Vector4 Color = settings.Enabled
+        public readonly Vector4 Color = settings.State is ModState.Enabled
             ? count > 0
-                ? ColorId.ContainsItemsEnabled.Value().ToVector()
-                : Im.Style[ImGuiColor.Text]
+                ? ColorId.ContainsItemsEnabled.Vector
+                : ImGuiColor.Text.Vector
             : count > 0
-                ? ColorId.ContainsItemsDisabled.Value().ToVector()
-                : Im.Style[ImGuiColor.TextDisabled];
+                ? ColorId.ContainsItemsDisabled.Vector
+                : ImGuiColor.TextDisabled.Vector;
 
-        public readonly bool DifferingNames = string.Equals(mod.Name, mod.DirectoryName, StringComparison.CurrentCultureIgnoreCase);
+        public readonly bool DifferingNames = string.Equals(mod.Name, mod.Identifier, StringComparison.CurrentCultureIgnoreCase);
     }
 
-    public StringPair  SelectionName { get; private set; } = new("Select new Mod...", new StringU8("Select new Mod..."u8));
-    public string      Selection     { get; private set; } = string.Empty;
-    public ModSettings Settings      { get; private set; } = ModSettings.Empty;
+    public StringPair        SelectionName { get; private set; } = new("Select new Mod...", new StringU8("Select new Mod..."u8));
+    public string            Selection     { get; private set; } = string.Empty;
+    public SettingPresetData Settings      { get; private set; } = SettingPresetData.Empty;
 
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float previewWidth)
     {
@@ -80,32 +81,32 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
         {
             if (item.DifferingNames)
                 Im.Text(item.Directory.Utf8);
-            Im.Text($"{item.Settings.Enabled}");
+            Im.Text($"{item.Settings.State is ModState.Enabled}");
             Im.Text($"{item.Settings.Priority}");
             Im.Text($"{item.Count}");
             DrawSettingsRight(item.Settings);
         }
     }
 
-    public static void DrawSettingsLeft(in ModSettings settings)
+    public static void DrawSettingsLeft(in SettingPresetData settings)
     {
-        foreach (var setting in settings.Settings)
+        foreach (var (group, data) in settings.Settings)
         {
-            Im.Text(setting.Key);
-            for (var i = 1; i < setting.Value.Count; ++i)
-                Im.Line.New();
+            Im.Text(group.Name ?? group.Identifier.ToString());
+            // TODO presets
         }
     }
 
-    public static void DrawSettingsRight(in ModSettings settings)
+    public static void DrawSettingsRight(in SettingPresetData settings)
     {
         foreach (var setting in settings.Settings)
         {
-            if (setting.Value.Count is 0)
-                Im.Text("<None Enabled>"u8);
-            else
-                foreach (var option in setting.Value)
-                    Im.Text(option);
+            // TODO presets
+            //if (setting.Value.Count is 0)
+            //    Im.Text("<None Enabled>"u8);
+            //else
+            //    foreach (var option in setting.Value)
+            //        Im.Text(option);
         }
     }
 

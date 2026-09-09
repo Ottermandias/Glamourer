@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface;
 using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Interop;
@@ -23,7 +22,7 @@ public sealed class UnlockOverview(
     CodeService codes,
     JobService jobs,
     FavoriteManager favorites,
-    PenumbraService penumbra,
+    PenumbraSubscriber penumbra,
     IgnoredMods ignoredMods) : IUiService
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
@@ -94,8 +93,8 @@ public sealed class UnlockOverview(
         if (!child)
             return;
 
-        _moddedColor   = ColorId.ModdedItemMarker.Value();
-        _favoriteColor = ColorId.FavoriteStarOn.Value();
+        _moddedColor   = ColorId.ModdedItemMarker.Value;
+        _favoriteColor = ColorId.FavoriteStarOn.Value;
 
         if (_selected1 is not FullEquipType.Unknown)
             DrawItems();
@@ -164,7 +163,7 @@ public sealed class UnlockOverview(
 
         void DrawItem(EquipItem item)
         {
-            // TODO check unlocks
+            // TODO 20260824 check unlocks
             var unlocked = true;
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
@@ -179,7 +178,7 @@ public sealed class UnlockOverview(
 
             var mods = DrawModdedMarker(item, iconSize);
 
-            // TODO handle clicking
+            // TODO 20260824 handle clicking
             if (Im.Item.Hovered())
             {
                 using var style = Im.Style.PushDefault();
@@ -190,9 +189,9 @@ public sealed class UnlockOverview(
                 Im.Text(item.Type.ToNameU8());
                 Im.Text($"{item.Id.Id}");
                 Im.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
-                // TODO
+                // TODO 20260824 
                 Im.Text("Always Unlocked"u8); // : $"Unlocked on {time:g}" : "Not Unlocked.");
-                // TODO
+                // TODO 20260824
                 //tooltip.CreateTooltip(item, string.Empty, false);
                 DrawModTooltip(mods);
             }
@@ -221,7 +220,7 @@ public sealed class UnlockOverview(
             Im.Image.Draw(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value(),
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value,
                     2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
@@ -285,12 +284,12 @@ public sealed class UnlockOverview(
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
     {
-        var mods = penumbra.CheckCurrentChangedItem(item.Name);
+        var mods = penumbra.CheckCurrentChangedItems(item.Name).ToArray();
         if (mods.Length is 0)
             return mods;
 
         var center = Im.Item.UpperLeftCorner + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
-        if (mods.All(m => ignoredMods.Contains(m.ModDirectory) || ignoredMods.Contains(m.ModName)))
+        if (mods.All(m => ignoredMods.Contains(m.Identifier) || ignoredMods.Contains(m.Name)))
         {
             Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor.WithAlpha(0.33f));
         }

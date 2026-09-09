@@ -74,9 +74,9 @@ public class EquipmentBarWindow : OverlayWindow, IDisposable
 
         _style.Push(ImStyleDouble.WindowPadding, new Vector2(Im.Style.GlobalScale * 4))
             .Push(ImStyleSingle.WindowBorderThickness, 0);
-        _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Value())
-            .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Value())
-            .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Value());
+        _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Vector)
+            .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Vector)
+            .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Vector);
     }
 
     public override void PostDraw()
@@ -86,8 +86,8 @@ public class EquipmentBarWindow : OverlayWindow, IDisposable
     {
         var buttonWidth = new Vector2(Im.Style.FrameHeight * 4.0f + Im.Style.ItemInnerSpacing.X * 3.0f, Im.Style.FrameHeight);
         ImEx.TextFramed(_selection.ShortName, buttonWidth,
-            textColor: _selection.Data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value(),
-            frameColor: ImGuiColor.Button.Get());
+            textColor: _selection.Data.Valid ? ColorId.ActorAvailable.Value : ColorId.ActorUnavailable.Value,
+            frameColor: ImGuiColor.Button.Value);
         if (ImEx.Icon.LabeledButton(FontAwesomeIcon.TheaterMasks.Icon(), "Expand"u8, "Go back to Glamourer's Main Window."u8, buttonWidth))
             _navigator.SetMainWindow(true);
 
@@ -113,12 +113,12 @@ public class EquipmentBarWindow : OverlayWindow, IDisposable
 
         if (_selection.Data.Objects.Count > 0)
         {
-            using var popupStyle = new Im.ColorStyleDisposable();
-            popupStyle.PushDefault(ImStyleDouble.WindowPadding);
-            popupStyle.PushDefault(ImStyleSingle.WindowBorderThickness);
-            popupStyle.PushDefault(ImGuiColor.WindowBackground);
-            popupStyle.PushDefault(ImGuiColor.Button);
-            popupStyle.PushDefault(ImGuiColor.FrameBackground);
+            using var popupStyle = Im.ColorStyle()
+                .PushDefault(ImStyleDouble.WindowPadding)
+                .PushDefault(ImStyleSingle.WindowBorderThickness)
+                .PushDefault(ImGuiColor.WindowBackground)
+                .PushDefault(ImGuiColor.Button)
+                .PushDefault(ImGuiColor.FrameBackground);
 
             _advancedDyes.Draw(_selection.Data.Objects.Last(), _selection.State!, true);
         }

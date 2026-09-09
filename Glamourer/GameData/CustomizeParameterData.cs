@@ -247,7 +247,7 @@ public struct CustomizeParameterData
 
     private static unsafe float GetUvOffset(in CustomizeParameter parameter)
     {
-        // TODO CS Update
+        // TODO 20262408 CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
             return ((float*)ptr)[15];
@@ -256,7 +256,7 @@ public struct CustomizeParameterData
 
     private static unsafe ref float GetUvOffsetWrite(ref CustomizeParameter parameter)
     {
-        // TODO CS Update
+        // TODO 20262408 CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
             return ref ((float*)ptr)[15];
@@ -265,7 +265,7 @@ public struct CustomizeParameterData
 
     private static unsafe float GetUvMultiplier(in CustomizeParameter parameter)
     {
-        // TODO CS Update
+        // TODO 20262408 CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
             return ((float*)ptr)[11];
@@ -274,7 +274,7 @@ public struct CustomizeParameterData
 
     private static unsafe ref float GetUvMultiplierWrite(ref CustomizeParameter parameter)
     {
-        // TODO CS Update
+        // TODO 20262408 CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
             return ref ((float*)ptr)[11];

@@ -15,16 +15,16 @@ namespace Glamourer.Interop.Material;
 
 public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 {
-    private readonly PrepareColorSet _event;
-    private readonly StateManager    _stateManager;
-    private readonly PenumbraService _penumbra;
-    private readonly ActorManager    _actors;
+    private readonly PrepareColorSet    _event;
+    private readonly StateManager       _stateManager;
+    private readonly PenumbraSubscriber _penumbra;
+    private readonly ActorManager       _actors;
 
     private int _lastSlot;
 
     private readonly ThreadLocal<List<MaterialValueIndex>> _deleteList = new(() => []);
 
-    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra,
+    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraSubscriber penumbra,
         Configuration config)
     {
         _stateManager = stateManager;
@@ -52,7 +52,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         var min    = MaterialValueIndex.Min(type, slotId, materialId);
         var max    = MaterialValueIndex.Max(type, slotId, materialId);
         var values = state.Materials.GetValues(min, max);
-        if (values.Length == 0)
+        if (values.Length is 0)
             return;
 
         if (!PrepareColorSet.TryGetColorTable(arguments.Handle, arguments.Ids, out var baseColorSet))
@@ -63,6 +63,12 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             MaterialValueIndex.DrawObjectType.Human => GetTempSlot(arguments.Model.AsHuman, (HumanSlot)slotId),
             _                                       => GetTempSlot(arguments.Model.AsWeapon),
         };
+        var gameData  = state.BaseData.GetIds(type, (HumanSlot)slotId);
+        var stateData = state.ModelData.GetIds(type, (HumanSlot)slotId);
+        // We are transformed, e.g. reaper transformation, since the new slot matches neither the game data nor our own state.
+        if (gameData != drawData && stateData != drawData)
+            return;
+
         var mode = PrepareColorSet.GetMode(arguments.Handle);
         UpdateMaterialValues(state, values, drawData, ref baseColorSet, mode);
 
@@ -179,13 +185,13 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             return false;
         }
 
-        if (actor.AsCharacter->DrawData.WeaponData[0].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[0].DrawData.DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Mainhand;
             return true;
         }
 
-        if (actor.AsCharacter->DrawData.WeaponData[1].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[1].DrawData.DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Offhand;
             return true;

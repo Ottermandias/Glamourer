@@ -1,7 +1,8 @@
-﻿using Glamourer.Automation;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using Newtonsoft.Json.Linq;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -13,11 +14,19 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public const string  ResolvedName   = "Random";
     private      Design? _currentDesign;
 
+    public string                          CustomName    { get; private set; } = string.Empty;
     public IReadOnlyList<IDesignPredicate> Predicates    { get; private set; } = [];
-    public bool                            ResetOnRedraw { get; set; }         = false;
+    public bool                            ResetOnRedraw { get; set; }
 
-    public string ResolveName(bool _)
-        => ResolvedName;
+    public string ResolveName(bool incognito)
+    {
+        if (CustomName.Length is 0)
+            return ResolvedName;
+        if (!incognito || CustomName.Length <= 2)
+            return $"{ResolvedName} ({CustomName})";
+
+        return $"{ResolvedName} ({CustomName.AsSpan(0, 2)}...)";
+    }
 
     public ref readonly DesignData GetDesignData(in DesignData baseRef)
     {
@@ -56,24 +65,26 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
             _currentDesign = rng.Design(Predicates);
         else
             _currentDesign ??= rng.Design(Predicates);
-        if (_currentDesign == null)
+        if (_currentDesign is null)
             yield break;
 
         foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication, condition))
             yield return (link, type, jobs);
     }
 
-    public void AddData(JObject jObj)
+    public void AddData(Utf8JsonWriter jObj)
     {
-        jObj["Restrictions"]  = RandomPredicate.GeneratePredicateString(Predicates);
-        jObj["ResetOnRedraw"] = ResetOnRedraw;
+        jObj.WriteNonEmptyString("Restrictions"u8, RandomPredicate.GeneratePredicateString(Predicates));
+        jObj.WriteNonEmptyString("CustomName"u8,   CustomName);
+        jObj.WriteIfNot("ResetOnRedraw"u8, ResetOnRedraw, false);
     }
 
-    public void ParseData(JObject jObj)
+    public void ParseData(in JsonElement jObj)
     {
-        var restrictions = jObj["Restrictions"]?.ToObject<string>() ?? string.Empty;
+        var restrictions = jObj.PropertyOrDefault("Restrictions"u8, string.Empty);
         Predicates    = RandomPredicate.GeneratePredicates(restrictions);
-        ResetOnRedraw = jObj["ResetOnRedraw"]?.ToObject<bool>() ?? false;
+        ResetOnRedraw = jObj.PropertyOrDefault("ResetOnRedraw"u8, false);
+        CustomName    = jObj.PropertyOrDefault("CustomName"u8,    string.Empty);
     }
 
     public bool ChangeData(object data)
@@ -90,18 +101,24 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
             return true;
         }
 
+        if (data is string customName)
+        {
+            CustomName = customName;
+            return true;
+        }
+
         return false;
     }
 
     public bool ForcedRedraw
         => _currentDesign?.ForcedRedraw ?? false;
 
-    public CombinedItemSlotFlag ResetAdvancedDyes
+    public ModelCombinedSlots ResetAdvancedDyes
         => _currentDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => _currentDesign?.ResetTemporarySettings ?? false;
 
-    public CombinedItemSlotFlag RevertAdvancedDyes
+    public ModelCombinedSlots RevertAdvancedDyes
         => _currentDesign?.RevertAdvancedDyes ?? 0;
 }

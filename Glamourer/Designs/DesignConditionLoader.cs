@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Interop;
 using Luna;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -14,7 +14,7 @@ public class DesignConditionsLoader(JobService jobs) : IService
     public DesignConditions Canonicalize(DesignConditions conditions)
         => conditions.Constant is true ? AlwaysTrue : conditions;
 
-    public bool TryParse(JToken? token, out DesignConditions conditions, string? descriptionPrefix, string description)
+    public bool TryParse(in JsonElement? token, out DesignConditions conditions, string? descriptionPrefix, string description)
     {
         var data    = DesignConditionData.Deserialize(token);
         var success = TryConvert(data, out conditions);

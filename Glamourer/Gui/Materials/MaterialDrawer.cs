@@ -5,14 +5,17 @@ using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Gui;
 
 namespace Glamourer.Gui.Materials;
 
-public class MaterialDrawer(DesignManager designManager, Configuration config) : IService
+public unsafe class MaterialDrawer(DesignManager designManager, Configuration config, TextureArraySlicePickers textureArraySlicePickers)
+    : IService
 {
     public const float SliderWidth      = 90;
     public const float ModeWidth        = 45;
-    public const float SheenSliderWidth = (2 * SliderWidth + ModeWidth) / 3;
+    public const float RowBaseWidth     = 2 * SliderWidth + ModeWidth;
+    public const float SheenSliderWidth = RowBaseWidth / 3;
 
     private int                _newMaterialIdx;
     private int                _newRowIdx;
@@ -38,7 +41,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         Im.Dummy(0);
         Im.Separator();
         Im.Dummy(0);
-        if (available > 2.6f * colorWidth)
+        if (available > 3.25f * colorWidth)
             DrawSingleRow(design);
         else
             DrawMultipleRow(design);
@@ -50,8 +53,8 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         using var _ = Im.Disabled(design.WriteProtected());
 
         var any      = design.Materials.Count > 0;
-        var disabled = !config.DeleteDesignModifier.IsActive();
-        var size     = new Vector2(200 * Im.Style.GlobalScale, 0);
+        var disabled = !LunaStyle.Modifier.Destructive.Active;
+        var size     = ImEx.ScaledVectorX(200);
         if (ImEx.Button("Enable All Advanced Dyes"u8, size,
                 any
                     ? "Enable the application of all contained advanced dyes without deleting them."u8
@@ -59,8 +62,9 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
                 !any || disabled))
             designManager.ChangeApplyMulti(design, null, null, null, null, null, null, true, null);
 
-        if (disabled && any)
-            Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} while clicking to enable.");
+        if (any)
+            LunaStyle.Modifier.Destructive.TooltipLineBreak("enable"u8);
+
         Im.Line.Same();
         if (ImEx.Button("Disable All Advanced Dyes"u8, size,
                 any
@@ -68,16 +72,17 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
                     : "This design does not contain any advanced dyes."u8,
                 !any || disabled))
             designManager.ChangeApplyMulti(design, null, null, null, null, null, null, false, null);
-        if (disabled && any)
-            Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} while clicking to disable.");
+        if (any)
+            LunaStyle.Modifier.Destructive.TooltipLineBreak("disable"u8);
 
-        if (ImEx.Button("Delete All Advanced Dyes"u8, size, any ? StringU8.Empty : "This design does not contain any advanced dyes."u8,
+        if (ImEx.Button("Delete All Advanced Dyes"u8, size,
+                any ? "Delete all advanced dyes permanently."u8 : "This design does not contain any advanced dyes."u8,
                 !any || disabled))
             while (design.Materials.Count > 0)
                 designManager.ChangeMaterialValue(design, MaterialValueIndex.FromKey(design.Materials[0].Item1), null);
 
-        if (disabled && any)
-            Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} while clicking to delete.");
+        if (any)
+            LunaStyle.Modifier.Destructive.TooltipLineBreak("delete"u8);
     }
 
     private void DrawRevertSlots(Design design)
@@ -223,9 +228,11 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         static ReadOnlySpan<byte> ToTooltipString(ColorRow.Mode mode)
             => mode switch
             {
-                ColorRow.Mode.Legacy    => "This color row currently contains Legacy material parameters.\nClick this button to switch it to Dawntrail parameters."u8,
-                ColorRow.Mode.Dawntrail => "This color row currently contains Dawntrail material parameters.\nClick this button to switch it to Legacy parameters."u8,
-                _                       => StringU8.Empty,
+                ColorRow.Mode.Legacy =>
+                    "This color row currently contains Legacy material parameters.\nClick this button to switch it to Dawntrail parameters."u8,
+                ColorRow.Mode.Dawntrail =>
+                    "This color row currently contains Dawntrail material parameters.\nClick this button to switch it to Legacy parameters."u8,
+                _ => StringU8.Empty,
             };
     }
 
@@ -236,29 +243,15 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         using (var combo = Im.Combo.Begin("##slot"u8, _newKey.SlotName()))
         {
             if (combo)
-            {
-                var currentSlot = _newKey.ToEquipSlot();
-                foreach (var tmpSlot in EquipSlotExtensions.FullSlots)
+                foreach (var slot in MaterialValueIndex.AllSlots)
                 {
-                    if (Im.Selectable(tmpSlot.ToNameU8(), tmpSlot == currentSlot) && currentSlot != tmpSlot)
-                        _newKey = MaterialValueIndex.FromSlot(tmpSlot) with
+                    if (Im.Selectable(slot.SlotName(), slot.SlotEquals(_newKey)) && !slot.SlotEquals(_newKey))
+                        _newKey = slot with
                         {
                             MaterialIndex = (byte)_newMaterialIdx,
                             RowIndex = (byte)_newRowIdx,
                         };
                 }
-
-                var currentBonus = _newKey.ToBonusSlot();
-                foreach (var bonusSlot in BonusExtensions.AllFlags)
-                {
-                    if (Im.Selectable(bonusSlot.ToNameU8(), bonusSlot == currentBonus) && bonusSlot != currentBonus)
-                        _newKey = MaterialValueIndex.FromSlot(bonusSlot) with
-                        {
-                            MaterialIndex = (byte)_newMaterialIdx,
-                            RowIndex = (byte)_newRowIdx,
-                        };
-                }
-            }
         }
 
         Im.Tooltip.OnHover("Choose a slot for an advanced dye row."u8);
@@ -354,8 +347,8 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         if (mode is not ColorRow.Mode.Dawntrail)
             return;
 
-        var tmp = row;
-        using var _ = Im.Disabled(disabled);
+        var       tmp = row;
+        using var _   = Im.Disabled(disabled);
 
         if (!compact)
             Im.Dummy(_buttonSize with { X = _buttonSize.X * 3 + _spacing * 2 });
@@ -374,6 +367,38 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         Im.Item.SetNextWidthScaled(SheenSliderWidth);
         applied |= AdvancedDyePopup.DragSheenRoughness(ref tmp.SheenAperture, true);
         Im.Tooltip.OnHover("Change the sheen roughness for this row.\nControl and Right-Click to unset."u8);
+
+        if (!compact)
+            Im.Dummy(_buttonSize with { X = _buttonSize.X * 3 + _spacing * 2 });
+
+        var allItemsWidth = RowBaseWidth - Im.Style.ItemInnerSpacing.X;
+        var itemWidth     = MathF.Floor(allItemsWidth / 4);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        applied |= AdvancedDyePopup.DragExposure(ref tmp.Exposure, true);
+        Im.Tooltip.OnHover("Change the exposure value for this row.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        using (Im.Style.Push(ImStyleSingle.Alpha, 0.5f * Im.Style.Alpha, (index.RowIndex & 1) is not 0))
+        {
+            applied |= AdvancedDyePopup.DragAnisotropy(ref tmp.Anisotropy, true);
+        }
+
+        Im.Tooltip.OnHover((index.RowIndex & 1) is 0
+            ? "Change the anisotropy degree for this row.\nControl and Right-Click to unset."u8
+            : "Change the anisotropy degree for this row.\nThis has no effect on B rows, unless using a shader mod.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        applied |= AdvancedDyePopup.InputSphereMapIndex(textureArraySlicePickers,
+            "Change the sphere map for this row.\nControl and Right-Click to unset."u8, ref tmp.SphereMapIndex, true);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(allItemsWidth - itemWidth * 3);
+        applied |= AdvancedDyePopup.DragSphereMapMask(ref tmp.SphereMapMask, true);
+        Im.Tooltip.OnHover("Change the sphere map intensity for this row.\nControl and Right-Click to unset."u8);
 
         if (applied)
             designManager.ChangeMaterialValue(design, index, tmp);

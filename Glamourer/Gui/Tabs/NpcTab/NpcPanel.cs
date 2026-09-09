@@ -65,7 +65,7 @@ public sealed class NpcPanel(
         if (!h)
             return;
 
-        customizeDrawer.Draw(selection.Data.Customize, true, true);
+        customizeDrawer.Draw(selection.Data.Customize, true, true, false, 0);
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Config;
 using Glamourer.Designs;
+using Glamourer.Designs.Links;
 using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Services;
 using ImSharp;
@@ -17,19 +18,21 @@ public sealed class DesignDetailTab : IUiService
     private readonly DesignColors         _colors;
     private readonly DesignColorCombo     _colorCombo;
     private readonly PredefinedTagManager _predefinedTags;
+    private readonly DesignLinkLoader     _designLinkLoader;
 
     private bool _editDescriptionMode;
 
     public DesignDetailTab(SaveService saveService, DesignManager manager, DesignFileSystem fileSystem,
-        DesignColors colors, Configuration config, PredefinedTagManager predefinedTags)
+        DesignColors colors, Configuration config, PredefinedTagManager predefinedTags, DesignLinkLoader designLinkLoader)
     {
-        _saveService    = saveService;
-        _manager        = manager;
-        _fileSystem     = fileSystem;
-        _colors         = colors;
-        _config         = config;
-        _predefinedTags = predefinedTags;
-        _colorCombo     = new DesignColorCombo(_colors, false);
+        _saveService      = saveService;
+        _manager          = manager;
+        _fileSystem       = fileSystem;
+        _colors           = colors;
+        _config           = config;
+        _predefinedTags   = predefinedTags;
+        _designLinkLoader = designLinkLoader;
+        _colorCombo       = new DesignColorCombo(_colors, false);
     }
 
     public void Draw()
@@ -80,12 +83,25 @@ public sealed class DesignDetailTab : IUiService
                         NotificationType.Warning);
                 }
 
+
             if (Im.Item.RightClicked())
+
                 Im.Clipboard.Set(identifier);
         }
 
         Im.Tooltip.OnHover(
             $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
+
+        using (var context = Im.Popup.BeginContextItem())
+        {
+            if (context)
+            {
+                if (Im.Menu.Item("Copy to Clipboard"u8))
+                    Im.Clipboard.Set(identifier);
+                if (Im.Menu.Item("Reload From File"u8))
+                    _manager.Reload(_designLinkLoader, Selected);
+            }
+        }
 
         table.DrawFrameColumn("Full Selector Path"u8);
         table.NextColumn();

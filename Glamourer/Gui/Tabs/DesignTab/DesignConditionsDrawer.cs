@@ -73,6 +73,8 @@ public class DesignConditionsDrawer(JobService jobs) : IService
             => value.Name.ToString();
 
         public override IEnumerable<JobGroup> GetBaseItems()
-            => jobs.JobGroups.Values;
+            => jobs.JobGroups.Values.OrderBy(g => g.Id.Id is not 1)
+                .ThenBy(g => g.Count)
+                .ThenBy(g => g.Id);
     }
 }

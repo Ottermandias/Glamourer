@@ -99,8 +99,8 @@ public sealed class AutomationButtons : ButtonFooter
             Im.Text("Automated Design Sets"u8);
             Im.BulletText("First, you create automated design sets. An automated design set can be... "u8);
             using var indent = Im.Indent();
-            Im.BulletText("... enabled, or"u8, ColorId.EnabledAutoSet.Value());
-            Im.BulletText("... disabled."u8,   ColorId.DisabledAutoSet.Value());
+            Im.BulletText("... enabled, or"u8, ColorId.EnabledAutoSet.Vector);
+            Im.BulletText("... disabled."u8,   ColorId.DisabledAutoSet.Vector);
             indent.Unindent();
             Im.BulletText("You can create new, empty automated design sets, or duplicate existing ones."u8);
             Im.BulletText("You can name automated design sets arbitrarily."u8);

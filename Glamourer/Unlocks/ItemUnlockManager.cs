@@ -44,7 +44,6 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
     public ItemUnlockManager(SaveService saveService, ItemManager items, IClientState clientState, IDataManager gameData, IFramework framework,
         ObjectUnlocked @event, ObjectIdentification identifier, IGameInteropProvider interop)
     {
-        interop.InitializeFromAttributes(this);
         _saveService = saveService;
         _items       = items;
         _clientState = clientState;
@@ -228,7 +227,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
         if (Unlockable.TryGetValue(itemId, out var req))
             return req.IsUnlocked(this);
 
-        // TODO inventory
+        // TODO 20260824 inventory
         return false;
     }
 
@@ -251,7 +250,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
             }
         }
 
-        // TODO inventories
+        // TODO 20260824 inventories
         if (changes)
             Save();
     }
@@ -264,7 +263,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         UnlockDictionaryHelpers.Save(writer, _unlocked);
     }
 

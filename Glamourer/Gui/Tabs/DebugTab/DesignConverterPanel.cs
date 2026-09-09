@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Utility;
 using ImSharp;
 using Luna;
 using Newtonsoft.Json.Linq;
@@ -48,10 +47,10 @@ public sealed class DesignConverterPanel(DesignConverter designConverter) : IGam
                     _version = clipboardData[0];
                     if (_version is 5)
                         clipboardData = clipboardData[DesignBase64Migration.Base64SizeV4..];
-                    _clipboardData    = StringU8.Join((byte)' ', clipboardData.Select(b => b.ToString("X2")));
-                    _version          = clipboardData.Decompress(out var dataUncompressed);
-                    _dataUncompressed = StringU8.Join((byte)' ', dataUncompressed.Select(b => b.ToString("X2")));
-                    _textUncompressed = new StringU8(dataUncompressed);
+                    _clipboardData    = FormattingFunctions.BytewiseHexSpaced(clipboardData);
+                    _version          = CompressionFunctions.Decompress(clipboardData, CompressionVersionMode.Uncompressed, out Memory<byte> dataUncompressed);
+                    _dataUncompressed = FormattingFunctions.BytewiseHexSpaced(dataUncompressed.Span);
+                    _textUncompressed = new StringU8(dataUncompressed, false);
                     var textUncompressed = _textUncompressed.ToString();
                     _json      = JObject.Parse(textUncompressed);
                     _tmpDesign = designConverter.FromBase64(textU16, true, true, out _);

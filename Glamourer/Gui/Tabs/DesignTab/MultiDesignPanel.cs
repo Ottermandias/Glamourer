@@ -79,7 +79,7 @@ public sealed class MultiDesignPanel(
             ++_numDesignsForcedRedraw;
         if (l.Value.ResetAdvancedDyes is not 0)
             ++_numDesignsResetSomeDyes;
-        if (l.Value.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+        if (l.Value.ResetAdvancedDyes.HasFlag(ModelCombinedSlotsExtensions.All))
             ++_numDesignsResetAllDyes;
         if (l.Value.Materials.Count > 0)
         {
@@ -110,9 +110,10 @@ public sealed class MultiDesignPanel(
             table.SetupColumn("mod"u8,  TableColumnFlags.WidthFixed, sizeMods);
             table.SetupColumn("path"u8, TableColumnFlags.WidthFixed, sizeFolders);
 
-            foreach (var (index, node) in fileSystem.Selection.OrderedNodes.Index())
+            using var id = Im.Id.Empty();
+            foreach (var node in fileSystem.Selection.OrderedNodes.OrderBy(p => p.FullPath, StringComparer.OrdinalIgnoreCase))
             {
-                using var id = Im.Id.Push(index);
+                id.PushNext();
                 var (icon, text) = node is IFileSystemData<Design> l
                     ? (LunaStyle.RemoveFileIcon, l.Value.Name)
                     : (LunaStyle.RemoveFolderIcon, string.Empty);
@@ -124,6 +125,7 @@ public sealed class MultiDesignPanel(
                 table.DrawFrameColumn(node.FullPath);
 
                 CountLeaves(node);
+                id.Pop();
             }
         }
 
@@ -265,7 +267,7 @@ public sealed class MultiDesignPanel(
                 ? $"All {fileSystem.Selection.DataNodes.Count} selected designs already reset advanced dyes."
                 : $"Make all {fileSystem.Selection.DataNodes.Count} selected designs reset advanced dyes. Changes {diff} designs.", diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
-                editor.ChangeResetAdvancedDyes(design.GetValue<Design>()!, EquipFlagExtensions.AllCombined);
+                editor.ChangeResetAdvancedDyes(design.GetValue<Design>()!, ModelCombinedSlotsExtensions.All);
 
         Im.Line.SameInner();
         if (ImEx.Button("Remove Reset Dyes"u8, width, _numDesignsLocked is 0

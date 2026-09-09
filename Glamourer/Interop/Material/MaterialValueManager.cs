@@ -1,17 +1,37 @@
 ﻿global using StateMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueState>;
 global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueDesign>;
+using System.Text.Json;
 using Glamourer.GameData;
 using Glamourer.State;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Files.StainMapStructs;
 using Penumbra.GameData.Structs;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 
 namespace Glamourer.Interop.Material;
 
 /// <summary> Values are not squared. </summary>
-public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength, float roughness, float metalness, float sheen, float sheenTint, float sheenAperture)
+public struct ColorRow(
+    Vector3 diffuse,
+    Vector3 specular,
+    Vector3 emissive,
+    float specularStrength,
+    float glossStrength,
+    float roughness,
+    float metalness,
+    float sheen,
+    float sheenTint,
+    float sheenAperture,
+    float exposure,
+    float anisotropy,
+    float sphereMapMask,
+    ushort sphereMapIndex)
 {
     public enum Mode
     {
@@ -19,16 +39,20 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
         Dawntrail,
     }
 
-    public const float DefaultSpecularStrength = 1f;
-    public const float DefaultGlossStrength    = 20f;
-    public const float DefaultRoughness        = 0.5f;
-    public const float DefaultMetalness        = 0f;
-    public const float DefaultSheen            = 0.1f;
-    public const float DefaultSheenTint        = 0.2f;
-    public const float DefaultSheenAperture    = 5f;
+    public const float  DefaultSpecularStrength = 1f;
+    public const float  DefaultGlossStrength    = 20f;
+    public const float  DefaultRoughness        = 0.5f;
+    public const float  DefaultMetalness        = 0f;
+    public const float  DefaultSheen            = 0.1f;
+    public const float  DefaultSheenTint        = 0.2f;
+    public const float  DefaultSheenAperture    = 5f;
+    public const float  DefaultExposure         = 1f;
+    public const float  DefaultAnisotropy       = 0f;
+    public const float  DefaultSphereMapMask    = 0f;
+    public const ushort DefaultSphereMapIndex   = 0;
 
     public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN,
-        float.NaN, float.NaN);
+        float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, ushort.MaxValue);
 
     public Vector3 Diffuse          = diffuse;
     public Vector3 Specular         = specular;
@@ -40,17 +64,33 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   Sheen            = sheen;
     public float   SheenTint        = sheenTint;
     public float   SheenAperture    = sheenAperture;
+    public float   Exposure         = exposure;
+    public float   Anisotropy       = anisotropy;
+    public float   SphereMapMask    = sphereMapMask;
+    public ushort  SphereMapIndex   = sphereMapIndex;
 
     public static ColorRow From(in ColorTableRow row, Mode mode)
         => mode switch
         {
-            Mode.Legacy => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
-                (float)row.LegacySpecularStrength(), (float)row.LegacyGloss(), float.NaN, float.NaN, float.NaN, float.NaN, float.NaN),
-            Mode.Dawntrail => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            Mode.Legacy => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+                (float)row.LegacySpecularStrength(), (float)row.LegacyGloss(), float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN,
+                float.NaN, float.NaN, ushort.MaxValue),
+            Mode.Dawntrail => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
                 float.NaN, float.NaN, (float)row.DawntrailRoughness(), (float)row.DawntrailMetalness(), (float)row.DawntrailSheen(),
-                (float)row.DawntrailSheenTint(), (float)row.DawntrailSheenAperture()),
+                (float)row.DawntrailSheenTint(), (float)row.DawntrailSheenAperture(), (float)row.DawntrailExposure(),
+                (float)row.DawntrailAnisotropy(), (float)row.DawntrailSphereMapMask(), (ushort)row.DawntrailSphereMapIndex()),
             _ => throw new NotImplementedException(),
         };
+
+    public static ColorRow From(in LegacyDyePack row)
+        => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            (float)row.SpecularMask, (float)row.Shininess, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN,
+            float.NaN, ushort.MaxValue);
+
+    public static ColorRow From(in DyePack row)
+        => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            float.NaN, float.NaN, (float)row.Roughness, (float)row.Metalness, (float)row.SheenRate, (float)row.SheenTintRate,
+            (float)row.SheenAperture, (float)row.Exposure, (float)row.Anisotropy, (float)row.SphereMapMask, row.SphereMapIndex);
 
     public readonly bool NearEqual(in ColorRow rhs, bool skipEmpty = false)
         => Diffuse.NearEqual(rhs.Diffuse)
@@ -62,7 +102,11 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
          && (float.IsNaN(Metalness) ? skipEmpty || float.IsNaN(rhs.Metalness) : Metalness.NearEqual(rhs.Metalness))
          && (float.IsNaN(Sheen) ? skipEmpty || float.IsNaN(rhs.Sheen) : Sheen.NearEqual(rhs.Sheen))
          && (float.IsNaN(SheenAperture) ? skipEmpty || float.IsNaN(rhs.SheenAperture) : SheenAperture.NearEqual(rhs.SheenAperture))
-         && (float.IsNaN(SheenTint) ? skipEmpty || float.IsNaN(rhs.SheenTint) : SheenTint.NearEqual(rhs.SheenTint));
+         && (float.IsNaN(SheenTint) ? skipEmpty || float.IsNaN(rhs.SheenTint) : SheenTint.NearEqual(rhs.SheenTint))
+         && (float.IsNaN(Exposure) ? skipEmpty || float.IsNaN(rhs.Exposure) : Exposure.NearEqual(rhs.Exposure, 1e-6f))
+         && (float.IsNaN(Anisotropy) ? skipEmpty || float.IsNaN(rhs.Anisotropy) : Anisotropy.NearEqual(rhs.Anisotropy))
+         && (float.IsNaN(SphereMapMask) ? skipEmpty || float.IsNaN(rhs.SphereMapMask) : SphereMapMask.NearEqual(rhs.SphereMapMask))
+         && (SphereMapIndex is ushort.MaxValue ? skipEmpty || rhs.SphereMapIndex is ushort.MaxValue : SphereMapIndex == rhs.SphereMapIndex);
 
     private static Vector3 Square(Vector3 value)
         => new(Square(value.X), Square(value.Y), Square(value.Z));
@@ -147,6 +191,30 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
                     ret                           = true;
                 }
 
+                if (!float.IsNaN(Exposure) && !((float)row.DawntrailExposure()).NearEqual(Exposure))
+                {
+                    row.DawntrailExposureWrite() = (Half)Exposure;
+                    ret                          = true;
+                }
+
+                if (!float.IsNaN(Anisotropy) && !((float)row.DawntrailAnisotropy()).NearEqual(Anisotropy))
+                {
+                    row.DawntrailAnisotropyWrite() = (Half)Anisotropy;
+                    ret                            = true;
+                }
+
+                if (!float.IsNaN(SphereMapMask) && !((float)row.DawntrailSphereMapMask()).NearEqual(SphereMapMask))
+                {
+                    row.DawntrailSphereMapMaskWrite() = (Half)SphereMapMask;
+                    ret                               = true;
+                }
+
+                if (SphereMapIndex is not ushort.MaxValue && (ushort)row.DawntrailSphereMapIndex() != SphereMapIndex)
+                {
+                    row.DawntrailSphereMapIndexWrite() = (Half)SphereMapIndex;
+                    ret                                = true;
+                }
+
                 break;
             default: throw new NotImplementedException();
         }
@@ -158,7 +226,10 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
         => new(Diffuse, Specular, Emissive, float.IsNaN(SpecularStrength) ? previous.SpecularStrength : SpecularStrength,
             float.IsNaN(GlossStrength) ? previous.GlossStrength : GlossStrength, float.IsNaN(Roughness) ? previous.Roughness : Roughness,
             float.IsNaN(Metalness) ? previous.Metalness : Metalness, float.IsNaN(Sheen) ? previous.Sheen : Sheen,
-            float.IsNaN(SheenTint) ? previous.SheenTint : SheenTint, float.IsNaN(SheenAperture) ? previous.SheenAperture : SheenAperture);
+            float.IsNaN(SheenTint) ? previous.SheenTint : SheenTint, float.IsNaN(SheenAperture) ? previous.SheenAperture : SheenAperture,
+            float.IsNaN(Exposure) ? previous.Exposure : Exposure, float.IsNaN(Anisotropy) ? previous.Anisotropy : Anisotropy,
+            float.IsNaN(SphereMapMask) ? previous.SphereMapMask : SphereMapMask,
+            SphereMapIndex is ushort.MaxValue ? previous.SphereMapIndex : SphereMapIndex);
 
     public readonly bool IsPartial(Mode mode)
         => mode switch
@@ -168,65 +239,108 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
              || float.IsNaN(Metalness)
              || float.IsNaN(Sheen)
              || float.IsNaN(SheenTint)
-             || float.IsNaN(SheenAperture),
+             || float.IsNaN(SheenAperture)
+             || float.IsNaN(Exposure)
+             || float.IsNaN(Anisotropy)
+             || float.IsNaN(SphereMapMask)
+             || SphereMapIndex is ushort.MaxValue,
             _ => throw new NotImplementedException(),
         };
 
     public readonly Mode GuessMode()
-        => float.IsNaN(Roughness) && float.IsNaN(Metalness) && float.IsNaN(Sheen) && float.IsNaN(SheenTint) && float.IsNaN(SheenAperture)
-            ? Mode.Legacy
-            : Mode.Dawntrail;
+        => float.IsNaN(Roughness)
+         && float.IsNaN(Metalness)
+         && float.IsNaN(Sheen)
+         && float.IsNaN(SheenTint)
+         && float.IsNaN(SheenAperture)
+         && float.IsNaN(Exposure)
+         && float.IsNaN(Anisotropy)
+         && float.IsNaN(SphereMapMask)
+         && SphereMapIndex is ushort.MaxValue
+                ? Mode.Legacy
+                : Mode.Dawntrail;
 
     public override readonly string ToString()
-        => $"[ColorRow Diffuse={Diffuse} Specular={Specular} Emissive={Emissive} SpecularStrength={SpecularStrength} GlossStrength={GlossStrength} Roughness={Roughness} Metalness={Metalness} Sheen={Sheen} SheenTint={SheenTint} SheenAperture={SheenAperture}]";
+        => $"[ColorRow Diffuse={Diffuse} Specular={Specular} Emissive={Emissive} SpecularStrength={SpecularStrength} GlossStrength={GlossStrength} Roughness={Roughness} Metalness={Metalness} Sheen={Sheen} SheenTint={SheenTint} SheenAperture={SheenAperture} Exposure={Exposure} Anisotropy={Anisotropy} SphereMapMask={SphereMapMask} SphereMapIndex={SphereMapIndex}]";
 }
 
 internal static class ColorTableRowExtensions
 {
-    internal static Half LegacySpecularStrength(this in ColorTableRow row)
-        => row[7];
+    extension(in ColorTableRow row)
+    {
+        internal Half LegacySpecularStrength()
+            => row[7];
 
-    internal static Half LegacyGloss(this in ColorTableRow row)
-        => row[3];
+        internal Half LegacyGloss()
+            => row[3];
 
-    internal static Half DawntrailSheen(this in ColorTableRow row)
-        => row[12];
+        internal Half DawntrailExposure()
+            => row[11];
 
-    internal static Half DawntrailSheenTint(this in ColorTableRow row)
-        => row[13];
+        internal Half DawntrailSheen()
+            => row[12];
 
-    internal static Half DawntrailSheenAperture(this in ColorTableRow row)
-        => row[14];
+        internal Half DawntrailSheenTint()
+            => row[13];
 
-    internal static Half DawntrailRoughness(this in ColorTableRow row)
-        => row[16];
+        internal Half DawntrailSheenAperture()
+            => row[14];
 
-    internal static Half DawntrailMetalness(this in ColorTableRow row)
-        => row[18];
+        internal Half DawntrailRoughness()
+            => row[16];
 
-    internal static ref Half LegacySpecularStrengthWrite(this ref ColorTableRow row)
-        => ref row[7];
+        internal Half DawntrailMetalness()
+            => row[18];
 
-    internal static ref Half LegacyGlossWrite(this ref ColorTableRow row)
-        => ref row[3];
+        internal Half DawntrailAnisotropy()
+            => row[19];
 
-    internal static ref Half DawntrailSheenWrite(this ref ColorTableRow row)
-        => ref row[12];
+        internal Half DawntrailSphereMapMask()
+            => row[21];
 
-    internal static ref Half DawntrailSheenTintWrite(this ref ColorTableRow row)
-        => ref row[13];
+        internal Half DawntrailSphereMapIndex()
+            => row[27];
+    }
 
-    internal static ref Half DawntrailSheenApertureWrite(this ref ColorTableRow row)
-        => ref row[14];
+    extension(ref ColorTableRow row)
+    {
+        internal ref Half LegacySpecularStrengthWrite()
+            => ref row[7];
 
-    internal static ref Half DawntrailRoughnessWrite(this ref ColorTableRow row)
-        => ref row[16];
+        internal ref Half LegacyGlossWrite()
+            => ref row[3];
 
-    internal static ref Half DawntrailMetalnessWrite(this ref ColorTableRow row)
-        => ref row[18];
+        internal ref Half DawntrailExposureWrite()
+            => ref row[11];
+
+        internal ref Half DawntrailSheenWrite()
+            => ref row[12];
+
+        internal ref Half DawntrailSheenTintWrite()
+            => ref row[13];
+
+        internal ref Half DawntrailSheenApertureWrite()
+            => ref row[14];
+
+        internal ref Half DawntrailRoughnessWrite()
+            => ref row[16];
+
+        internal ref Half DawntrailMetalnessWrite()
+            => ref row[18];
+
+        internal ref Half DawntrailAnisotropyWrite()
+            => ref row[19];
+
+        internal ref Half DawntrailSphereMapMaskWrite()
+            => ref row[21];
+
+        internal ref Half DawntrailSphereMapIndexWrite()
+            => ref row[27];
+    }
 }
 
 [JsonConverter(typeof(Converter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(StjConverter))]
 public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, ColorRow.Mode mode)
 {
     public ColorRow      Value   = value;
@@ -253,6 +367,115 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
 
         state.Model = Value;
         return true;
+    }
+
+    public readonly void WriteJson(Utf8JsonWriter j)
+    {
+        j.WriteStartObject();
+        j.WriteIfNot("Enabled"u8, Enabled, false);
+        j.WriteIfNot("Revert"u8,  Revert,  false);
+        j.WriteString("Mode"u8, Mode.StringU8);
+        j.WriteNumber("DiffuseR"u8,  Value.Diffuse.X);
+        j.WriteNumber("DiffuseG"u8,  Value.Diffuse.Y);
+        j.WriteNumber("DiffuseB"u8,  Value.Diffuse.Z);
+        j.WriteNumber("SpecularR"u8, Value.Specular.X);
+        j.WriteNumber("SpecularG"u8, Value.Specular.Y);
+        j.WriteNumber("SpecularB"u8, Value.Specular.Z);
+        j.WriteIfNotNaN("SpecularA"u8, Value.SpecularStrength);
+        j.WriteNumber("EmissiveR"u8, Value.Emissive.X);
+        j.WriteNumber("EmissiveG"u8, Value.Emissive.Y);
+        j.WriteNumber("EmissiveB"u8, Value.Emissive.Z);
+        j.WriteIfNotNaN("Gloss"u8,         Value.GlossStrength);
+        j.WriteIfNotNaN("Roughness"u8,     Value.Roughness);
+        j.WriteIfNotNaN("Metalness"u8,     Value.Metalness);
+        j.WriteIfNotNaN("Sheen"u8,         Value.Sheen);
+        j.WriteIfNotNaN("SheenTint"u8,     Value.SheenTint);
+        j.WriteIfNotNaN("SheenAperture"u8, Value.SheenAperture);
+        j.WriteIfNotNaN("Exposure"u8,      Value.Exposure);
+        j.WriteIfNotNaN("Anisotropy"u8,    Value.Anisotropy);
+        j.WriteIfNotNaN("SphereMapMask"u8, Value.SphereMapMask);
+        j.WriteIfNot("SphereMapIndex"u8, Value.SphereMapIndex, ushort.MaxValue);
+        j.WriteEndObject();
+    }
+
+    public static bool TryReadJson(ref Utf8JsonReader j, out MaterialValueDesign value)
+    {
+        value = new MaterialValueDesign
+        {
+            Enabled = false,
+            Mode    = ColorRow.Mode.Legacy,
+            Revert  = false,
+            Value   = ColorRow.Empty,
+        };
+        if (j.TokenType is not JsonTokenType.StartObject)
+            return false;
+
+        var limit = j.CreateObjectLimit();
+        while (limit.Read(ref j))
+        {
+            if (j.TokenType is not JsonTokenType.PropertyName)
+                continue;
+
+            if (j.BoolProperty("Revert"u8, out var r))
+                value.Revert = r;
+            else if (j.BoolProperty("Enabled"u8, out var e))
+                value.Enabled = e;
+            else if (j.EnumProperty("Mode"u8, out ColorRow.Mode m))
+                value.Mode = m;
+            else if (j.NumberProperty("DiffuseR"u8, out float dr))
+                value.Value.Diffuse.X = dr;
+            else if (j.NumberProperty("DiffuseG"u8, out float dg))
+                value.Value.Diffuse.Y = dg;
+            else if (j.NumberProperty("DiffuseB"u8, out float db))
+                value.Value.Diffuse.Z = db;
+            else if (j.NumberProperty("SpecularR"u8, out float sr))
+                value.Value.Specular.X = sr;
+            else if (j.NumberProperty("SpecularG"u8, out float sg))
+                value.Value.Specular.Y = sg;
+            else if (j.NumberProperty("SpecularB"u8, out float sb))
+                value.Value.Specular.Z = sb;
+            else if (j.NumberProperty("SpecularA"u8, out float ss))
+                value.Value.SpecularStrength = ss;
+            else if (j.NumberProperty("EmissiveR"u8, out float er))
+                value.Value.Emissive.X = er;
+            else if (j.NumberProperty("EmissiveG"u8, out float eg))
+                value.Value.Emissive.Y = eg;
+            else if (j.NumberProperty("EmissiveB"u8, out float eb))
+                value.Value.Emissive.Z = eb;
+            else if (j.NumberProperty("Gloss"u8, out float g))
+                value.Value.GlossStrength = g;
+            else if (j.NumberProperty("Roughness"u8, out float rg))
+                value.Value.Roughness = rg;
+            else if (j.NumberProperty("Metalness"u8, out float me))
+                value.Value.Metalness = me;
+            else if (j.NumberProperty("Sheen"u8, out float s))
+                value.Value.Sheen = s;
+            else if (j.NumberProperty("SheenTint"u8, out float st))
+                value.Value.SheenTint = st;
+            else if (j.NumberProperty("SheenAperture"u8, out float sa))
+                value.Value.SheenAperture = Math.Clamp(sa, (float)Half.Epsilon, (float)Half.MaxValue);
+            else if (j.NumberProperty("Exposure"u8, out float ev))
+                value.Value.Exposure = Math.Clamp(ev, 0.0f, (float)Half.MaxValue);
+            else if (j.NumberProperty("Anisotropy"u8, out float an))
+                value.Value.Anisotropy = an;
+            else if (j.NumberProperty("SphereMapMask"u8, out float sm))
+                value.Value.SphereMapMask = sm;
+            else if (j.NumberProperty("SphereMapIndex"u8, out ushort si))
+                value.Value.SphereMapIndex = si;
+            else
+                j.Skip();
+        }
+
+        return true;
+    }
+
+    private class StjConverter : System.Text.Json.Serialization.JsonConverter<MaterialValueDesign>
+    {
+        public override MaterialValueDesign Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => TryReadJson(ref reader, out var r) ? r : default;
+
+        public override void Write(Utf8JsonWriter writer, MaterialValueDesign value, JsonSerializerOptions options)
+            => value.WriteJson(writer);
     }
 
     private class Converter : JsonConverter<MaterialValueDesign>
@@ -324,6 +547,30 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
                 writer.WriteValue(value.Value.SheenAperture);
             }
 
+            if (!float.IsNaN(value.Value.Exposure))
+            {
+                writer.WritePropertyName("Exposure");
+                writer.WriteValue(value.Value.Exposure);
+            }
+
+            if (!float.IsNaN(value.Value.Anisotropy))
+            {
+                writer.WritePropertyName("Anisotropy");
+                writer.WriteValue(value.Value.Anisotropy);
+            }
+
+            if (!float.IsNaN(value.Value.SphereMapMask))
+            {
+                writer.WritePropertyName("SphereMapMask");
+                writer.WriteValue(value.Value.SphereMapMask);
+            }
+
+            if (value.Value.SphereMapIndex is not ushort.MaxValue)
+            {
+                writer.WritePropertyName("SphereMapIndex");
+                writer.WriteValue(value.Value.SphereMapIndex);
+            }
+
             writer.WritePropertyName("Enabled");
             writer.WriteValue(value.Enabled);
             writer.WriteEndObject();
@@ -353,6 +600,10 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
             existingValue.Value.Sheen            = obj["Sheen"]?.Value<float>() ?? float.NaN;
             existingValue.Value.SheenTint        = obj["SheenTint"]?.Value<float>() ?? float.NaN;
             existingValue.Value.SheenAperture    = obj["SheenAperture"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.Exposure         = obj["Exposure"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.Anisotropy       = obj["Anisotropy"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.SphereMapMask    = obj["SphereMapMask"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.SphereMapIndex   = obj["SphereMapIndex"]?.Value<ushort>() ?? ushort.MaxValue;
             existingValue.Enabled                = obj["Enabled"]?.Value<bool>() ?? false;
             return existingValue;
 
@@ -417,7 +668,7 @@ public readonly struct MaterialValueManager<T>
 
     public bool TryGetValue(uint key, out T value)
     {
-        if (_values.Count == 0)
+        if (_values.Count is 0)
         {
             value = default!;
             return false;
@@ -447,16 +698,31 @@ public readonly struct MaterialValueManager<T>
         return true;
     }
 
+    public ModelCombinedSlots CheckExistenceSlots(ModelCombinedSlots flag)
+    {
+        var existing  = (ModelCombinedSlots)0;
+        var remaining = flag;
+        while (remaining is not 0)
+        {
+            var slot = remaining.First;
+            if (CheckExistenceSlot(MaterialValueIndex.Min(slot)))
+                existing |= slot;
+            remaining &= ~slot;
+        }
+
+        return existing;
+    }
+
     public bool CheckExistenceSlot(MaterialValueIndex index)
     {
         var key = CheckExistence(index);
-        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex;
+        return key.Valid && key.SlotEquals(index);
     }
 
     public bool CheckExistenceMaterial(MaterialValueIndex index)
     {
         var key = CheckExistence(index);
-        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex && key.MaterialIndex == index.MaterialIndex;
+        return key.Valid && key.SlotEquals(index) && key.MaterialIndex == index.MaterialIndex;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

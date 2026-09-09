@@ -1,9 +1,9 @@
-﻿using Glamourer.Automation;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Glamourer.Gui;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Luna;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -21,7 +21,7 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
         => ResolvedName;
 
     public Design? CurrentDesign
-        => combo.QuickDesign as Design;
+        => combo.QuickDesign;
 
     public ref readonly DesignData GetDesignData(in DesignData baseRef)
     {
@@ -44,10 +44,10 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
         Predicate<DesignConditions>? condition)
         => combo.QuickDesign?.AllLinks(newApplication, condition) ?? [];
 
-    public void AddData(JObject jObj)
+    public void AddData(Utf8JsonWriter _)
     { }
 
-    public void ParseData(JObject jObj)
+    public void ParseData(in JsonElement _)
     { }
 
     public bool ChangeData(object data)
@@ -56,12 +56,12 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
     public bool ForcedRedraw
         => combo.QuickDesign?.ForcedRedraw ?? false;
 
-    public CombinedItemSlotFlag ResetAdvancedDyes
+    public ModelCombinedSlots ResetAdvancedDyes
         => combo.QuickDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => combo.QuickDesign?.ResetTemporarySettings ?? false;
 
-    public CombinedItemSlotFlag RevertAdvancedDyes
+    public ModelCombinedSlots RevertAdvancedDyes
         => combo.QuickDesign?.RevertAdvancedDyes ?? 0;
 }

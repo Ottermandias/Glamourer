@@ -45,9 +45,9 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     public void DrawButton(AutoDesignSet set, int designIndex)
     {
         var isOpen = set == _set && designIndex == _designIndex;
-        using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], isOpen)
-                   .Push(ImGuiColor.Text,   ColorId.HeaderButtons.Value(), isOpen)
-                   .Push(ImGuiColor.Border, ColorId.HeaderButtons.Value(), isOpen))
+        using (ImGuiColor.Button.Push(ImGuiColor.ButtonActive.Vector, isOpen)
+                   .Push(ImGuiColor.Text,   ColorId.HeaderButtons.Vector, isOpen)
+                   .Push(ImGuiColor.Border, ColorId.HeaderButtons.Vector, isOpen))
         {
             using var frame = ImStyleSingle.FrameBorderThickness.Push(2 * Im.Style.GlobalScale, isOpen);
             if (ImEx.Icon.Button(LunaStyle.EditIcon))
@@ -395,6 +395,10 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         Im.Cursor.Y += Im.Style.GlobalScale - Im.Style.WindowPadding.Y;
         Im.Separator();
         Im.Dummy(Vector2.Zero);
+        Im.Item.SetNextWidthFull();
+        if (ImEx.InputOnDeactivation.Text("##Name"u8, random.CustomName, out string newName, "Custom Name..."u8))
+            _autoDesignManager.ChangeData(_set!, _designIndex, newName);
+
         var reset = random.ResetOnRedraw;
         if (Im.Checkbox("Reset Chosen Design On Every Redraw"u8, ref reset))
             _autoDesignManager.ChangeData(_set!, _designIndex, reset);

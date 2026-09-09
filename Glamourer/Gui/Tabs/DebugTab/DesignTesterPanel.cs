@@ -4,7 +4,6 @@ using ImSharp;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
-using Luna;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -53,7 +52,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
 
         try
         {
-            _parse64      = DesignBase64Migration.MigrateBase64(items, humans, _base64, out var ef, out var cf, out var wp, out var meta);
+            _parse64      = DesignBase64Migration.MigrateBase64(items, humans, Convert.FromBase64String(_base64), out var ef, out var cf, out var wp, out var meta);
             _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, meta, wp);
             _restoreBytes = Convert.FromBase64String(_restore);
         }

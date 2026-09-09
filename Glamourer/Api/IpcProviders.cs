@@ -1,6 +1,5 @@
 using Dalamud.Plugin;
 using Glamourer.Api.Api;
-using Glamourer.Api.Helpers;
 using Glamourer.Api.Enums;
 using Luna;
 

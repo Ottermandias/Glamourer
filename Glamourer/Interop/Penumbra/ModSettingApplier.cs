@@ -9,7 +9,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Interop.Penumbra;
 
 public class ModSettingApplier(
-    PenumbraService penumbra,
+    PenumbraSubscriber penumbra,
     PenumbraAutoRedrawSkip autoRedrawSkip,
     Configuration config,
     ActorObjectManager objects,
@@ -18,9 +18,11 @@ public class ModSettingApplier(
 {
     private readonly HashSet<Guid> _collectionTracker = [];
 
-    public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual)
+    public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual,
+        bool? forcedSetting)
     {
-        if (!config.AlwaysApplyAssociatedMods || design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings)
+        var apply = forcedSetting ?? config.AlwaysApplyAssociatedMods;
+        if (!apply || design.AssociatedMods.Count is 0 && !design.ResetTemporarySettings)
             return;
 
         if (!objects.TryGetValue(state.Identifier, out var data))
@@ -49,13 +51,13 @@ public class ModSettingApplier(
                     Glamourer.Log.Verbose($"[Mod Applier] Error applying mod settings: {message}");
                 else
                     Glamourer.Log.Verbose(
-                        $"[Mod Applier] Set mod settings for {mod.DirectoryName} in {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
+                        $"[Mod Applier] Set mod settings for {mod.Identifier} in {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
             }
         }
     }
 
     public (List<string> Messages, int Applied, Guid Collection, string Name, bool Overridden) ApplyModSettings(
-        IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor, StateSource source, bool resetOther)
+        IReadOnlyDictionary<ModIdentifier, SettingPresetData> settings, Actor actor, StateSource source, bool resetOther)
     {
         var (collection, name, overridden) = overrides.GetCollection(actor);
         if (collection == Guid.Empty)

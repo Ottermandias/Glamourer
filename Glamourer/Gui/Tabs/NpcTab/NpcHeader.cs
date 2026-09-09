@@ -22,11 +22,11 @@ public sealed class NpcHeader : SplitButtonHeader
         => _selection.HasSelection ? _selection.Name : "No Selection"u8;
 
     public override ColorParameter TextColor
-        => ColorId.NormalDesign.Value();
+        => ColorId.NormalDesign.Value;
 
     public override void Draw(Vector2 size)
     {
-        var       color = ColorId.HeaderButtons.Value();
+        var       color = ColorId.HeaderButtons.Vector;
         using var _     = ImGuiColor.Text.Push(color).Push(ImGuiColor.Border, color);
         base.Draw(size with { Y = Im.Style.FrameHeight });
     }
@@ -52,7 +52,7 @@ public sealed class NpcHeader : SplitButtonHeader
             => favorites.ToggleFavorite(selection.Data);
 
         protected override void PreDraw()
-            => _color.Push(ImGuiColor.Text, selection.Favorite ? ColorId.FavoriteStarOn.Value() : 0x80000000);
+            => _color.Push(ImGuiColor.Text, selection.Favorite ? ColorId.FavoriteStarOn.Value : 0x80000000);
 
         protected override void PostDraw()
             => _color.Dispose();

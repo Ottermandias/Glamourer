@@ -1,6 +1,4 @@
 using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Luna;
 using Penumbra.GameData;
@@ -12,7 +10,8 @@ namespace Glamourer.Interop;
 
 public sealed class JobService : IDisposable, IRequiredService
 {
-    private readonly nint _characterDataOffset;
+    private readonly HookManager _hooks;
+    private readonly nint        _characterDataOffset;
 
     public readonly DictJob      Jobs;
     public readonly DictJobGroup JobGroups;
@@ -22,26 +21,25 @@ public sealed class JobService : IDisposable, IRequiredService
 
     public event Action<Actor, Job, Job>? JobChanged;
 
-    public JobService(DictJob jobs, DictJobGroup jobGroups, IGameInteropProvider interop)
+    public JobService(DictJob jobs, DictJobGroup jobGroups, HookManager hooks)
     {
-        interop.InitializeFromAttributes(this);
         _characterDataOffset = Marshal.OffsetOf<Character>(nameof(Character.CharacterData));
         Jobs                 = jobs;
         JobGroups            = jobGroups;
-        _changeJobHook.Enable();
+        _hooks               = hooks;
+        _changeJobHook       = _hooks.CreateHook<ChangeJobDelegate>("ChangeJob", Sigs.ChangeJob, ChangeJobDetour, true)!;
     }
 
     public void Dispose()
-        => _changeJobHook.Dispose();
+        => _hooks.DisposeHook("ChangeJob");
 
     private delegate void ChangeJobDelegate(nint data, byte oldJob, byte newJob);
 
-    [Signature(Sigs.ChangeJob, DetourName = nameof(ChangeJobDetour))]
-    private readonly Hook<ChangeJobDelegate> _changeJobHook = null!;
+    private readonly Task<Hook<ChangeJobDelegate>> _changeJobHook;
 
     private void ChangeJobDetour(nint data, byte oldJobIndex, byte newJobIndex)
     {
-        _changeJobHook.OriginalDisposeSafe(data, oldJobIndex, newJobIndex);
+        _changeJobHook.Result.OriginalDisposeSafe(data, oldJobIndex, newJobIndex);
 
         // Do not trigger on creation (Adventurer -> Anything)
         if (oldJobIndex is 0)

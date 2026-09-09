@@ -12,7 +12,7 @@ public class DesignBase64Migration
     public const int Base64SizeV2 = 91;
     public const int Base64SizeV4 = 95;
 
-    public static unsafe DesignData MigrateBase64(ItemManager items, HumanModelList humans, string base64, out EquipFlag equipFlags,
+    public static unsafe DesignData MigrateBase64(ItemManager items, HumanModelList humans, ReadOnlySpan<byte> bytes, out EquipFlag equipFlags,
         out CustomizeFlag customizeFlags, out bool writeProtected, out MetaFlag metaFlags)
     {
         static void CheckSize(int length, int requiredLength)
@@ -24,7 +24,6 @@ public class DesignBase64Migration
 
         byte   applicationFlags;
         ushort equipFlagsS;
-        var    bytes = Convert.FromBase64String(base64);
         metaFlags = MetaFlag.Wetness;
         var data = new DesignData();
         switch (bytes[0])
@@ -33,14 +32,14 @@ public class DesignBase64Migration
             {
                 CheckSize(bytes.Length, Base64SizeV1);
                 applicationFlags = bytes[1];
-                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                equipFlagsS      = BitConverter.ToUInt16(bytes[2..]);
                 break;
             }
             case 2:
             {
                 CheckSize(bytes.Length, Base64SizeV2);
                 applicationFlags = bytes[1];
-                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                equipFlagsS      = BitConverter.ToUInt16(bytes[2..]);
                 data.SetHatVisible((bytes[90] & 0x01) == 0);
                 data.SetVisor((bytes[90] & 0x10) != 0);
                 data.SetWeaponVisible((bytes[90] & 0x02) == 0);
@@ -53,7 +52,7 @@ public class DesignBase64Migration
             {
                 CheckSize(bytes.Length, Base64SizeV4); // contains model id
                 applicationFlags = bytes[1];
-                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                equipFlagsS      = BitConverter.ToUInt16(bytes[2..]);
                 data.SetHatVisible((bytes[90] & 0x01) == 0);
                 data.SetVisor((bytes[90] & 0x10) != 0);
                 data.SetWeaponVisible((bytes[90] & 0x02) == 0);
@@ -64,7 +63,7 @@ public class DesignBase64Migration
                 bytes = bytes[..Base64SizeV4];
                 CheckSize(bytes.Length, Base64SizeV4); // contains model id
                 applicationFlags = bytes[1];
-                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                equipFlagsS      = BitConverter.ToUInt16(bytes[2..]);
                 data.SetHatVisible((bytes[90] & 0x01) == 0);
                 data.SetVisor((bytes[90] & 0x10) != 0);
                 data.SetWeaponVisible((bytes[90] & 0x02) == 0);

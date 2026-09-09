@@ -20,7 +20,7 @@ public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, Design
             return;
 
         using var tt             = Im.Tooltip.Begin();
-        var       highlightColor = ColorId.EnabledAutoSet.Value().ToVector();
+        var       highlightColor = ColorId.EnabledAutoSet.Vector;
         Im.Text("Filter designs for those where their full paths or names contain the given strings, split by spaces."u8);
         ImEx.TextMultiColored("Enter "u8).Then("m:[string]"u8, highlightColor)
             .Then(" to filter for designs with a mod association containing the string."u8).End();

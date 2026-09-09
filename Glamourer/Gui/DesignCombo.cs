@@ -29,7 +29,7 @@ public abstract class DesignComboBase(
     {
         var (color, path) = design is Design d
             ? (DesignColors.GetColor(d).ToVector(), d.Node?.FullPath ?? d.Name)
-            : (ColorId.NormalDesign.Value().ToVector(), string.Empty);
+            : (ColorId.NormalDesign.Vector, string.Empty);
         var name = design.ResolveName(false);
         if (path == name)
             path = string.Empty;
@@ -203,8 +203,12 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
                 return;
 
             field                      = value;
-            Config.SelectedQuickDesign = field?.Identifier ?? Guid.Empty;
-            Config.Save();
+            var identifier = field?.Identifier ?? Guid.Empty;
+            if (Config.SelectedQuickDesign != identifier)
+            {
+                Config.SelectedQuickDesign = identifier;
+                Config.Save();
+            }
         }
     }
 

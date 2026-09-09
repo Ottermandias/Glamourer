@@ -40,11 +40,11 @@ public sealed class LocalNpcAppearanceData : ISavable, IUiService
         if (color.Length is 0)
         {
             if (favorite)
-                return ColorId.FavoriteStarOn.Value();
+                return ColorId.FavoriteStarOn.Value;
 
             return kind is ObjectKind.BattleNpc
-                ? ColorId.BattleNpc.Value()
-                : ColorId.EventNpc.Value();
+                ? ColorId.BattleNpc.Value
+                : ColorId.EventNpc.Value;
         }
 
         if (_colors.TryGetValue(color, out var value))
@@ -99,7 +99,7 @@ public sealed class LocalNpcAppearanceData : ISavable, IUiService
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         var jObj = new JObject()
         {
             ["Version"] = 1,

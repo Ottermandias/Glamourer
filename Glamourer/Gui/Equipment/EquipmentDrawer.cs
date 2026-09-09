@@ -82,7 +82,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         _iconSize              = new Vector2(2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y);
         _smallIconSize         = new Vector2(Im.Style.FrameHeight);
         _comboLength           = DefaultWidth * Im.Style.GlobalScale;
-        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
+        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value;
         _dragTarget            = EquipSlot.Unknown;
         _compact               = compact;
         (_stainWidth, _drawEquip, _drawBonus, _drawWeapons, _drawCombo) = (_config.SmallEquip, _compact) switch
@@ -645,7 +645,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
-            left = Im.Item.InvisibleButton("button"u8);
+            left = Im.Item.InvisibleButton("button2"u8);
             var right = Im.Item.RightClicked();
             Im.Line.Same();
             using (Im.Group())
@@ -856,7 +856,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
-            left = Im.Item.InvisibleButton("button"u8);
+            left = Im.Item.InvisibleButton("button2"u8);
             var right = Im.Item.RightClicked();
             Im.Line.Same();
             using (Im.Group())

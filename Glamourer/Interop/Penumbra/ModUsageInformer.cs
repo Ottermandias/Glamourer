@@ -6,17 +6,17 @@ namespace Glamourer.Interop.Penumbra;
 
 public sealed class ModUsageInformer : IDisposable, IRequiredService
 {
-    private readonly PenumbraService   _penumbra;
-    private readonly DesignManager     _designs;
-    private readonly AutoDesignManager _automation;
+    private readonly PenumbraSubscriber _penumbra;
+    private readonly DesignManager      _designs;
+    private readonly AutoDesignManager  _automation;
 
-    public ModUsageInformer(PenumbraService penumbra, DesignManager designs, AutoDesignManager automation)
+    public ModUsageInformer(PenumbraSubscriber penumbra, DesignManager designs, AutoDesignManager automation)
     {
         _penumbra   = penumbra;
         _designs    = designs;
         _automation = automation;
 
-        _penumbra.ModUsageQueried += OnModUsageQueried;
+        _penumbra.Ui.ModUsageQueried += OnModUsageQueried;
     }
 
     private void OnModUsageQueried(string modPath, string modName, Dictionary<Assembly, (bool, string)> notes)
@@ -42,9 +42,9 @@ public sealed class ModUsageInformer : IDisposable, IRequiredService
             notes.TryAdd(Assembly.GetAssembly(typeof(ModUsageInformer))!, (false, sb.ToString()));
     }
 
-    private static bool ModMatches(string modPath, string modName, in Mod mod)
+    private static bool ModMatches(string modPath, string modName, in ModIdentifier mod)
     {
-        if (mod.DirectoryName.Equals(modPath, StringComparison.OrdinalIgnoreCase))
+        if (mod.Identifier.Equals(modPath, StringComparison.OrdinalIgnoreCase))
             return true;
 
         if (mod.Name.Equals(modName, StringComparison.OrdinalIgnoreCase))
@@ -54,5 +54,5 @@ public sealed class ModUsageInformer : IDisposable, IRequiredService
     }
 
     public void Dispose()
-        => _penumbra.ModUsageQueried -= OnModUsageQueried;
+        => _penumbra.Ui.ModUsageQueried -= OnModUsageQueried;
 }

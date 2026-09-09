@@ -4,7 +4,6 @@ using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Luna.Generators;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -36,14 +35,26 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
         WriteUnlocksTab(j);
     }
 
-    protected override void LoadData(JObject j)
+    protected override void LoadData(in JsonElement j)
     {
-        _actorFilter           = j["Actors"]?["Filter"]?.Value<string>() ?? string.Empty;
-        _actorTypeFilter       = (ActorTypeFilter)(j["Actors"]?["Type"]?.Value<uint>() ?? 0) & AllFiltered;
-        _designFilter          = j["Designs"]?["Filter"]?.Value<string>() ?? string.Empty;
-        _npcFilter             = j["Npcs"]?["Filter"]?.Value<string>() ?? string.Empty;
-        _automationFilter      = j["Automation"]?["Filter"]?.Value<string>() ?? string.Empty;
-        _automationStateFilter = j["Automation"]?["State"]?.Value<bool>();
+        if (j.TryGetProperty("Actors"u8, out var actors))
+        {
+            _actorFilter     = actors.PropertyOrDefault("Filters"u8, _actorFilter);
+            _actorTypeFilter = actors.EnumOrDefault("Type"u8, _actorTypeFilter) & AllFiltered;
+        }
+
+        if (j.TryGetProperty("Designs"u8, out var designs))
+            _designFilter = designs.PropertyOrDefault("Filter"u8, _designFilter);
+
+        if (j.TryGetProperty("Npcs"u8, out var npcs))
+            _npcFilter = npcs.PropertyOrDefault("Filter"u8, _npcFilter);
+
+        if (j.TryGetProperty("Automation"u8, out var automation))
+        {
+            _automationFilter      = automation.PropertyOrDefault("Filter"u8, _automationFilter);
+            _automationStateFilter = automation.TryReadProperty("State"u8, out bool? value, true) ? value : _automationStateFilter;
+        }
+
         LoadUnlocksTab(j);
     }
 
@@ -122,24 +133,24 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
         tmp.WriteNonEmptyString("Type"u8,      UnlocksTypeFilter);
     }
 
-    private void LoadUnlocksTab(JObject j)
+    private void LoadUnlocksTab(in JsonElement j)
     {
-        if (j["Unlocks"] is not JObject unlocks)
+        if (!j.TryGetProperty("Unlocks"u8, out var unlocks))
             return;
 
-        _unlocksFavoriteFilter  = unlocks["Favorite"]?.Value<uint>() is { } f ? (YesNoFlag)f : YesNoFlag.Either;
-        _unlocksCrestFilter     = unlocks["Crest"]?.Value<uint>() is { } c ? (YesNoFlag)c : YesNoFlag.Either;
-        _unlocksTradableFilter  = unlocks["Tradable"]?.Value<uint>() is { } t ? (YesNoFlag)t : YesNoFlag.Either;
-        _unlocksUnlockedFilter  = unlocks["Unlocked"]?.Value<uint>() is { } u ? (YesNoFlag)u : YesNoFlag.Either;
-        _unlocksModdedFilter    = unlocks["Modded"]?.Value<uint>() is { } m ? (UnlockCacheItem.Modded)m : UnlockCacheItem.ModdedAll;
-        _unlocksDyabilityFilter = unlocks["Dyability"]?.Value<uint>() is { } d ? (UnlockCacheItem.Dyability)d : UnlockCacheItem.DyableAll;
-        _unlocksSlotFilter      = unlocks["Slot"]?.Value<uint>() is { } s ? (EquipFlag)s : UnlockCacheItem.SlotsAll;
-        _unlocksJobFilter       = unlocks["Job"]?.Value<ulong>() is { } job ? (JobFlag)job : _jobs.AllAvailableJobs;
-        _unlocksLevelFilter     = unlocks["Level"]?.Value<string>() ?? string.Empty;
-        _unlocksModelDataFilter = unlocks["ModelData"]?.Value<string>() ?? string.Empty;
-        _unlocksItemIdFilter    = unlocks["ItemId"]?.Value<string>() ?? string.Empty;
-        _unlocksNameFilter      = unlocks["Name"]?.Value<string>() ?? string.Empty;
-        _unlocksTypeFilter      = unlocks["Type"]?.Value<string>() ?? string.Empty;
+        _unlocksFavoriteFilter  = unlocks.EnumOrDefault("Favorite"u8,  _unlocksFavoriteFilter);
+        _unlocksCrestFilter     = unlocks.EnumOrDefault("Crest"u8,     _unlocksCrestFilter);
+        _unlocksTradableFilter  = unlocks.EnumOrDefault("Tradable"u8,  _unlocksTradableFilter);
+        _unlocksUnlockedFilter  = unlocks.EnumOrDefault("Unlocked"u8,  _unlocksUnlockedFilter);
+        _unlocksModdedFilter    = unlocks.EnumOrDefault("Modded"u8,    _unlocksModdedFilter);
+        _unlocksDyabilityFilter = unlocks.EnumOrDefault("Dyability"u8, _unlocksDyabilityFilter);
+        _unlocksSlotFilter      = unlocks.EnumOrDefault("Slot"u8,      _unlocksSlotFilter);
+        _unlocksJobFilter       = unlocks.EnumOrDefault("Job"u8,       _unlocksJobFilter);
+        _unlocksLevelFilter     = unlocks.PropertyOrDefault("Level"u8,     _unlocksLevelFilter);
+        _unlocksModelDataFilter = unlocks.PropertyOrDefault("ModelData"u8, _unlocksModelDataFilter);
+        _unlocksItemIdFilter    = unlocks.PropertyOrDefault("ItemId"u8,    _unlocksItemIdFilter);
+        _unlocksNameFilter      = unlocks.PropertyOrDefault("Name"u8,      _unlocksNameFilter);
+        _unlocksTypeFilter      = unlocks.PropertyOrDefault("Type"u8,      _unlocksTypeFilter);
     }
 
 

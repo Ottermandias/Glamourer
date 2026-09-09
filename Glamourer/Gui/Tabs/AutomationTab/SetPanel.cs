@@ -288,21 +288,21 @@ public sealed class SetPanel(
             if (count > 1)
             {
                 sb.AppendLine($"This design contains {count - 1} links to other designs.");
-                highlight = ColorId.HeaderButtons.Value();
+                highlight = ColorId.HeaderButtons.Value;
             }
 
             count = d.AssociatedMods.Count;
             if (count > 0)
             {
                 sb.AppendLine($"This design contains {count} mod associations.");
-                highlight = ColorId.ModdedItemMarker.Value();
+                highlight = ColorId.ModdedItemMarker.Value;
             }
 
             count = d.GetMaterialData().Count(p => p.Item2.Enabled);
             if (count > 0)
             {
                 sb.AppendLine($"This design contains {count} enabled advanced dyes.");
-                highlight = ColorId.AdvancedDyeActive.Value();
+                highlight = ColorId.AdvancedDyeActive.Value;
             }
         }
 
@@ -445,7 +445,7 @@ public sealed class SetPanel(
     {
         using var style   = ImStyleDouble.ItemSpacing.PushX(2 * Im.Style.GlobalScale);
         var       newType = design.Type;
-        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
+        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Vector))
         {
             Im.Checkbox("##all"u8, ref newType, ApplicationType.All);
         }

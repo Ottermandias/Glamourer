@@ -25,7 +25,7 @@ public sealed class NpcSelector(
         Im.Cursor.Y += Im.Style.FramePadding.Y;
         var       cache   = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(this));
         using var clipper = new Im.ListClipper(cache.Count, Im.Style.TextHeightWithSpacing);
-        using var color   = new Im.ColorDisposable();
+        using var color   = Im.Color.Empty();
         foreach (var item in clipper.Iterate(cache))
         {
             Im.Cursor.X += Im.Style.FramePadding.X;

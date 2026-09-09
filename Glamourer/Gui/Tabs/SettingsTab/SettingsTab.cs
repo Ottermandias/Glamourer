@@ -25,7 +25,6 @@ public sealed class SettingsTab(
     IUiBuilder uiBuilder,
     GlamourerChangelog changelog,
     IKeyState keys,
-    DesignColorUi designColorUi,
     PaletteImport paletteImport,
     CollectionOverrideDrawer overrides,
     CodeDrawer codeDrawer,
@@ -34,7 +33,8 @@ public sealed class SettingsTab(
     AutoRedrawChanged autoRedraw,
     PredefinedTagManager predefinedTags,
     PcpService pcpService,
-    IgnoredMods ignoredMods)
+    IgnoredMods ignoredMods,
+    DesignColorUi designColors)
     : ITab<MainTabType>
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -158,7 +158,7 @@ public sealed class SettingsTab(
             });
         Checkbox("Attach to PCP Handling"u8,
             "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
-            config.AttachToPcp, pcpService.Set);
+            config.AttachToPcp, v => config.AttachToPcp = v);
         var active = config.DeleteDesignModifier.IsActive();
         Im.Line.Same();
         if (ImEx.Button("Delete all PCP Designs"u8, default, "Deletes all designs tagged with 'PCP' from the design list."u8, !active))
@@ -467,29 +467,20 @@ public sealed class SettingsTab(
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        if (!Im.Tree.Header("Colors"u8))
-            return;
-
-        using (var tree = Im.Tree.Node("Custom Design Colors"u8))
+        using (var tree = Im.Tree.HeaderId("Custom Design Colors"u8))
         {
             if (tree)
-                designColorUi.Draw();
+                designColors.Draw();
         }
 
-        using (var tree = Im.Tree.Node("Color Settings"u8))
-        {
-            if (tree)
-                foreach (var color in ColorId.Values)
-                {
-                    var (defaultColor, name, description) = color.Data();
-                    var currentColor = config.Colors.GetValueOrDefault(color, defaultColor);
-                    if (!ImEx.ColorPicker(name, description, currentColor, out var newColor, defaultColor))
-                        continue;
+        using var header = Im.Tree.HeaderId("Colors"u8);
+        if (!header)
+            return;
 
-                    config.Colors[color] = newColor.Color;
-                    CacheManager.Instance.SetColorsDirty();
-                    config.Save();
-                }
+        if (ColorSettingsDrawer.Draw(Glamourer.Messager, config.Ui.Colors, config.Ui.ColorCache))
+        {
+            CacheManager.Instance.SetColorsDirty();
+            config.Ui.Save();
         }
 
         Im.Line.New();

@@ -27,11 +27,11 @@ public sealed class ActorsHeader : SplitButtonHeader
 
     public override ColorParameter TextColor
         => _selection.State is null ? ColorParameter.Default :
-            _selection.Data.Valid   ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
+            _selection.Data.Valid   ? ColorId.ActorAvailable.Value : ColorId.ActorUnavailable.Value;
 
     public override void Draw(Vector2 size)
     {
-        var       color = ColorId.HeaderButtons.Value();
+        var       color = ColorId.HeaderButtons.Vector;
         using var _     = ImGuiColor.Text.Push(color).Push(ImGuiColor.Border, color);
         base.Draw(size with { Y = Im.Style.FrameHeight });
     }

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Textures.TextureWraps;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Unlocks;
 using ImSharp;
 using Luna;
@@ -62,7 +63,27 @@ public partial class CustomizationDrawer
                 Im.Line.Same();
             }
 
-            Im.Text(label);
+            if (GetMaterialValueIndex(_currentIndex) is { } materialValueIndex)
+            {
+                var hasDyes = _existentAdvancedDyes.HasFlag(materialValueIndex.ToCombinedSlot());
+                if (_withAdvancedDyes)
+                {
+                    advancedDyes.DrawButton(materialValueIndex, _advancedMaterialColor, false, hasDyes);
+                    Im.Line.Same();
+                }
+
+                using (ImGuiColor.Text.Push(_advancedMaterialColor, hasDyes && _isDesign))
+                {
+                    Im.Text(label);
+                }
+
+                if (hasDyes && _isDesign)
+                    Im.Tooltip.OnHover("This design has advanced dyes setup for this slot."u8);
+            }
+            else
+            {
+                Im.Text(label);
+            }
         }
 
         DrawIconPickerPopup(current);
@@ -85,7 +106,7 @@ public partial class CustomizationDrawer
                 var isFavorite = favorites.Contains(_set.Gender, _set.Clan, _currentIndex, custom.Value);
                 using var frameColor = current == i
                     ? ImGuiColor.Button.Push(Colors.SelectedRed)
-                    : ImGuiColor.Button.Push(ColorId.FavoriteStarOn.Value(), isFavorite);
+                    : ImGuiColor.Button.Push(ColorId.FavoriteStarOn.Vector, isFavorite);
                 var hasIcon = icon.TryGetWrap(out var wrap, out _);
 
                 if (Im.Image.Button(wrap?.Id ?? icon.GetWrapOrEmpty().Id, _iconSize))
@@ -226,4 +247,13 @@ public partial class CustomizationDrawer
                 Im.Line.Same();
         }
     }
+
+    private static MaterialValueIndex? GetMaterialValueIndex(CustomizeIndex index)
+        => index switch
+        {
+            CustomizeIndex.Face      => MaterialValueIndex.Face,
+            CustomizeIndex.Hairstyle => MaterialValueIndex.Hair,
+            CustomizeIndex.TailShape => MaterialValueIndex.RacialFeature,
+            _                        => null,
+        };
 }

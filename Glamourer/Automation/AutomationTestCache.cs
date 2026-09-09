@@ -1,6 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Glamourer.Api.Enums;
-using Glamourer.Config;
+﻿using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
@@ -10,6 +8,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using ImSharp;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -29,6 +28,8 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
     private static readonly StringU8 Inherited           = new("Inherited"u8);
     private static readonly StringU8 Enabled             = new("Enabled"u8);
     private static readonly StringU8 Disabled            = new("Disabled"u8);
+    private static readonly StringU8 Toggled             = new("Toggled"u8);
+    private static readonly StringU8 Ignored             = new("Ignored"u8);
     private static readonly StringU8 Random              = new("Randomly Selected"u8);
     private static readonly StringU8 SetConfiguration    = new("Set Configuration"u8);
     private static readonly StringU8 Legacy              = new("Legacy Value"u8);
@@ -43,7 +44,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
     private readonly HashSet<StateIndex>         _state     = [];
     private readonly HashSet<MaterialValueIndex> _materials = [];
     private          bool                        _resetsAssociations;
-    private          CombinedItemSlotFlag        _resetsAdvanced;
+    private          ModelCombinedSlots          _resetsAdvanced;
     private          bool                        _forcesRedraw;
 
     public readonly struct Change(ulong type)
@@ -93,10 +94,10 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                 Source = designName,
             };
 
-        public static Change CreateAdvancedReset(StringU8 designName, Design? design, CombinedItemSlotFlag slots)
+        public static Change CreateAdvancedReset(StringU8 designName, Design? design, ModelCombinedSlots slots)
             => new(2u, design)
             {
-                Slot   = slots.HasFlag(EquipFlagExtensions.AllCombined) ? AllAdvancedDyes : new StringU8($"Advanced Dyes: {slots}"),
+                Slot   = slots.HasFlag(ModelCombinedSlotsExtensions.All) ? AllAdvancedDyes : new StringU8($"Advanced Dyes: {slots}"),
                 Target = ResetToGame,
                 Source = designName,
             };
@@ -166,7 +167,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
         if (!CustomDirty)
             return;
 
-        var mutableMaterialSlots = EquipFlagExtensions.AllCombined;
+        var mutableMaterialSlots = ModelCombinedSlotsExtensions.All;
 
         Dirty &= ~IManagedCache.DirtyFlags.Custom;
         _changes.Clear();
@@ -320,7 +321,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                 foreach (var (key, advancedDye) in link.GetMaterialData().Where(p => p.Item2.Enabled))
                 {
                     var index = MaterialValueIndex.FromKey(key);
-                    if (mutableMaterialSlots.HasFlag(index.ToCombinedItemSlot()) && _materials.Add(index))
+                    if (mutableMaterialSlots.HasFlag(index.ToCombinedSlot()) && _materials.Add(index))
                         _changes.Add(new Change(index, link as Design)
                         {
                             Slot   = new StringU8($"{index}"),
@@ -337,7 +338,15 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                         {
                             Slot   = new StringU8(mod.Name),
                             Source = designName,
-                            Target = settings.Remove ? Removed : settings.ForceInherit ? Inherited : settings.Enabled ? Enabled : Disabled,
+                            Target = settings.State switch
+                            {
+                                ModState.RemoveTemporary => Removed,
+                                ModState.Inherited       => Inherited,
+                                ModState.Enabled         => Enabled,
+                                ModState.Disabled        => Disabled,
+                                ModState.Toggle          => Toggled,
+                                _                        => Ignored,
+                            },
                         });
                     }
 

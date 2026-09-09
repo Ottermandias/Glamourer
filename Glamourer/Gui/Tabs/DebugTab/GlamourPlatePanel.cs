@@ -1,10 +1,9 @@
-﻿using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
 using ImSharp;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
@@ -13,28 +12,19 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
+public sealed unsafe class GlamourPlatePanel(
+    HookManager hooks,
+    ItemManager items,
+    DesignManager design,
+    StateManager state,
+    ActorObjectManager objects)
+    : IGameDataDrawer
 {
-    private readonly DesignManager      _design;
-    private readonly ItemManager        _items;
-    private readonly StateManager       _state;
-    private readonly ActorObjectManager _objects;
-
     public ReadOnlySpan<byte> Label
         => "Glamour Plates"u8;
 
     public bool Disabled
         => false;
-
-    public GlamourPlatePanel(IGameInteropProvider interop, ItemManager items, DesignManager design, StateManager state,
-        ActorObjectManager objects)
-    {
-        _items   = items;
-        _design  = design;
-        _state   = state;
-        _objects = objects;
-        interop.InitializeFromAttributes(this);
-    }
 
     public void Draw()
     {
@@ -64,9 +54,9 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
         if (manager is null)
             return;
 
-        ActorState? state = null;
-        var (identifier, data) = _objects.PlayerData;
-        var enabled = data.Valid && _state.GetOrCreate(identifier, data.Objects[0], out state);
+        ActorState? state1 = null;
+        var (identifier, data) = objects.PlayerData;
+        var enabled = data.Valid && state.GetOrCreate(identifier, data.Objects[0], out state1);
 
         for (var i = 0; i < manager->GlamourPlates.Length; ++i)
         {
@@ -78,7 +68,7 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
             if (ImEx.Button("Apply to Player"u8, Vector2.Zero, StringU8.Empty, !enabled))
             {
                 var design = CreateDesign(plate);
-                _state.ApplyDesign(state!, design, ApplySettings.Manual with { IsFinal = true });
+                state.ApplyDesign(state1!, design, ApplySettings.Manual with { IsFinal = true });
             }
 
             using (Im.Group())
@@ -96,8 +86,8 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
         }
     }
 
-    [Signature(Sigs.RequestGlamourPlates)]
-    private readonly delegate* unmanaged<MirageManager*, void> _requestUpdate = null!;
+    private readonly delegate* unmanaged<MirageManager*, void> _requestUpdate =
+        (delegate* unmanaged<MirageManager*, void>)hooks.SigScanner.ScanText(Sigs.RequestGlamourPlates);
 
     public void RequestGlamour()
     {
@@ -110,23 +100,23 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
 
     public DesignBase CreateDesign(in MirageManager.GlamourPlate plate)
     {
-        var design = _design.CreateTemporary();
-        design.Application = ApplicationCollection.None;
+        var design1 = design.CreateTemporary();
+        design1.Application = ApplicationCollection.None;
         foreach (var (index, slot) in EquipSlotExtensions.FullSlots.Index())
         {
             var itemId = plate.ItemIds[index];
             if (itemId is 0)
                 continue;
 
-            var item = _items.Resolve(slot, itemId);
+            var item = items.Resolve(slot, itemId);
             if (!item.Valid)
                 continue;
 
-            design.GetDesignDataRef().SetItem(slot, item);
-            design.GetDesignDataRef().SetStain(slot, StainIds.FromGlamourPlate(plate, index));
-            design.Application.Equip |= slot.ToBothFlags();
+            design1.GetDesignDataRef().SetItem(slot, item);
+            design1.GetDesignDataRef().SetStain(slot, StainIds.FromGlamourPlate(plate, index));
+            design1.Application.Equip |= slot.ToBothFlags();
         }
 
-        return design;
+        return design1;
     }
 }

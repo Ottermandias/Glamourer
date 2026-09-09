@@ -37,7 +37,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
     private void DrawCodeInput()
     {
         var       color  = codeService.CheckCode(_currentCode).Item2 is not 0 ? ColorId.ActorAvailable : ColorId.ActorUnavailable;
-        using var border = ImStyleBorder.Frame.Push(color.Value(), Im.Style.GlobalScale, _currentCode.Length > 0);
+        using var border = ImStyleBorder.Frame.Push(color.Vector, Im.Style.GlobalScale, _currentCode.Length > 0);
         Im.Item.SetNextWidth(500 * Im.Style.GlobalScale + Im.Style.ItemSpacing.X);
         if (Im.Input.Text("##Code"u8, ref _currentCode, "Enter Cheat Code..."u8, InputTextFlags.EnterReturnsTrue))
         {

@@ -1,20 +1,19 @@
-﻿using Dalamud.Interface.ImGuiNotification;
+﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Automation;
 using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
 using Luna;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Enums;
 using Notification = Luna.Notification;
 
 namespace Glamourer.Designs;
 
-public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemValue<Design>
+public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemValue<Design>, JsonObjectConversion.IJsonWritable<Design>
 {
     #region Data
 
@@ -37,30 +36,31 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         ResetTemporarySettings = other.ResetTemporarySettings;
         RevertAdvancedDyes     = other.RevertAdvancedDyes;
         Color                  = other.Color;
-        AssociatedMods         = new SortedList<Mod, ModSettings>(other.AssociatedMods);
+        AssociatedMods         = new SortedList<ModIdentifier, SettingPresetData>(other.AssociatedMods, ModIdentifierComparer.Instance);
         Links                  = Links.Clone();
     }
 
     // Metadata
-    public new const int FileVersion = 2;
+    public new const int FileVersion = 3;
 
-    public Guid                         Identifier             { get; internal init; }
-    public IFileSystemData<Design>?     Node                   { get; set; }
-    public DateTimeOffset               CreationDate           { get; internal init; }
-    public DateTimeOffset               LastEdit               { get; internal set; }
-    public string                       Name                   { get; internal set; } = string.Empty;
-    public string                       Description            { get; internal set; } = string.Empty;
-    public string[]                     Tags                   { get; internal set; } = [];
-    public int                          Index                  { get; internal set; }
-    public bool                         ForcedRedraw           { get; internal set; }
-    public CombinedItemSlotFlag         ResetAdvancedDyes      { get; internal set; }
-    public CombinedItemSlotFlag         RevertAdvancedDyes     { get; internal set; }
-    public bool                         ResetTemporarySettings { get; internal set; }
-    public bool                         QuickDesign            { get; internal set; } = true;
-    public string                       Color                  { get; internal set; } = string.Empty;
-    public SortedList<Mod, ModSettings> AssociatedMods         { get; private set; }  = [];
-    public LinkContainer                Links                  { get; private set; }  = [];
-    public DataPath                     Path                   { get; }               = new();
+    public Guid                     Identifier             { get; internal init; }
+    public IFileSystemData<Design>? Node                   { get; set; }
+    public DateTimeOffset           CreationDate           { get; internal init; }
+    public DateTimeOffset           LastEdit               { get; internal set; }
+    public string                   Name                   { get; internal set; } = string.Empty;
+    public string                   Description            { get; internal set; } = string.Empty;
+    public string[]                 Tags                   { get; internal set; } = [];
+    public int                      Index                  { get; internal set; }
+    public bool                     ForcedRedraw           { get; internal set; }
+    public ModelCombinedSlots       ResetAdvancedDyes      { get; internal set; }
+    public ModelCombinedSlots       RevertAdvancedDyes     { get; internal set; }
+    public bool                     ResetTemporarySettings { get; internal set; }
+    public bool                     QuickDesign            { get; internal set; } = true;
+    public string                   Color                  { get; internal set; } = string.Empty;
+    public LinkContainer            Links                  { get; private set; }  = [];
+    public DataPath                 Path                   { get; }               = new();
+
+    public SortedList<ModIdentifier, SettingPresetData> AssociatedMods { get; private set; } = new(ModIdentifierComparer.Instance);
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -91,10 +91,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public void AddData(JObject _)
+    public void AddData(Utf8JsonWriter _)
     { }
 
-    public void ParseData(JObject _)
+    public void ParseData(in JsonElement _)
     { }
 
     public bool ChangeData(object data)
@@ -104,67 +104,85 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     #region Serialization
 
-    public new JObject JsonSerialize()
+    public new void Serialize(Utf8JsonWriter j)
     {
-        var ret = new JObject
+        j.WriteStartObject();
+        j.WriteNumber("FileVersion"u8, FileVersion);
+        j.WriteString("Identifier"u8, Identifier);
+        j.WriteNumber("CreationDate"u8, CreationDate.ToUnixTimeMilliseconds());
+        j.WriteNumber("LastEdit"u8,     LastEdit.ToUnixTimeMilliseconds());
+        j.WriteString("Name"u8, Name);
+        j.WriteNonEmptyString("Description"u8, Description);
+        j.WriteIfNot("ForcedRedraw"u8,           ForcedRedraw,           false);
+        j.WriteIfNot("ResetTemporarySettings"u8, ResetTemporarySettings, false);
+        SerializeCombinedSlots(j, "ResetAdvancedDyes"u8,  ResetAdvancedDyes);
+        SerializeCombinedSlots(j, "RevertAdvancedDyes"u8, RevertAdvancedDyes);
+        j.WriteNonEmptyString("Color"u8, Color);
+        j.WriteIfNot("QuickDesign"u8,    QuickDesign,      true);
+        j.WriteIfNot("WriteProtected"u8, WriteProtected(), false);
+        j.WriteNonEmptyString("FileSystemFolder"u8, Path.Folder);
+        j.WriteNonEmptyString("SortOrderName"u8,    Path.SortName);
+        if (Tags.Length > 0)
         {
-            ["FileVersion"]            = FileVersion,
-            ["Identifier"]             = Identifier,
-            ["CreationDate"]           = CreationDate,
-            ["LastEdit"]               = LastEdit,
-            ["Name"]                   = Name,
-            ["Description"]            = Description,
-            ["ForcedRedraw"]           = ForcedRedraw,
-            ["ResetAdvancedDyes"]      = (uint)ResetAdvancedDyes,
-            ["ResetTemporarySettings"] = ResetTemporarySettings,
-            ["RevertAdvancedDyes"]     = (uint)RevertAdvancedDyes,
-            ["Color"]                  = Color,
-            ["QuickDesign"]            = QuickDesign,
-            ["Tags"]                   = JArray.FromObject(Tags),
-            ["WriteProtected"]         = WriteProtected(),
-            ["Equipment"]              = SerializeEquipment(),
-            ["Bonus"]                  = SerializeBonusItems(),
-            ["Customize"]              = SerializeCustomize(),
-            ["Parameters"]             = SerializeParameters(),
-            ["Materials"]              = SerializeMaterials(),
-            ["Mods"]                   = SerializeMods(),
-            ["Links"]                  = Links.Serialize(),
-        };
-        if (Path.Folder.Length > 0)
-            ret["FileSystemFolder"] = Path.Folder;
-        if (Path.SortName is not null)
-            ret["SortOrderName"] = Path.SortName;
-
-
-        return ret;
-    }
-
-    private JArray SerializeMods()
-    {
-        var ret = new JArray();
-        foreach (var (mod, settings) in AssociatedMods)
-        {
-            var obj = new JObject
-            {
-                ["Name"]      = mod.Name,
-                ["Directory"] = mod.DirectoryName,
-            };
-            if (settings.Remove)
-                obj["Remove"] = true;
-            else if (settings.ForceInherit)
-                obj["Inherit"] = true;
-            else
-                obj["Enabled"] = settings.Enabled;
-            if (settings.Enabled)
-            {
-                obj["Priority"] = settings.Priority;
-                obj["Settings"] = JObject.FromObject(settings.Settings);
-            }
-
-            ret.Add(obj);
+            j.WriteStartArray("Tags"u8);
+            foreach (var tag in Tags)
+                j.WriteStringValue(tag);
+            j.WriteEndArray();
         }
 
-        return ret;
+        SerializeEquipment(j);
+        SerializeBonusItems(j);
+        SerializeCustomize(j);
+        SerializeParameters(j);
+        SerializeMaterials(j);
+        SerializeMods(j);
+        Links.Serialize(j, "Links"u8);
+        j.WriteEndObject();
+    }
+
+    private void SerializeMods(Utf8JsonWriter j)
+    {
+        if (AssociatedMods.Count is 0)
+            return;
+
+        j.WriteStartArray("Mods"u8);
+        foreach (var (mod, settings) in AssociatedMods)
+        {
+            j.WriteStartObject();
+            j.WriteNonEmptyString("Name"u8,      mod.Name);
+            j.WriteNonEmptyString("Directory"u8, mod.Identifier);
+            settings.WriteJsonProperties(j);
+            j.WriteEndObject();
+        }
+
+        j.WriteEndArray();
+    }
+
+    private static void SerializeCombinedSlots(Utf8JsonWriter j, ReadOnlySpan<byte> property, ModelCombinedSlots slots)
+    {
+        if (slots is 0)
+            return;
+
+        j.WritePropertyName(property);
+        // If all the existing slots are included in the mask, save the intent of "All",
+        // so that future slots get included as well on deserialization.
+        if (slots.HasFlag(ModelCombinedSlotsExtensions.All))
+        {
+            j.WriteBooleanValue(true);
+        }
+        // If we only have AllEquipmentPieces (or a subset), this format is not ambiguous.
+        else if ((slots & ~ModelCombinedSlotsExtensions.AllEquipmentPieces) is 0)
+        {
+            j.WriteNumberValue((ulong)slots);
+        }
+        else
+        {
+            j.WriteStartObject();
+            j.WriteUnsignedIfNot("Human"u8,    unchecked((uint)slots),                0u);
+            j.WriteUnsignedIfNot("Mainhand"u8, unchecked((byte)((ulong)slots >> 32)), 0u);
+            j.WriteUnsignedIfNot("Offhand"u8,  unchecked((byte)((ulong)slots >> 40)), 0u);
+            j.WriteEndObject();
+        }
     }
 
     #endregion
@@ -172,24 +190,25 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     #region Deserialization
 
     public static Design LoadDesign(SaveService saveService, CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader,
-        JObject json)
+        in JsonElement json)
     {
-        var version = json["FileVersion"]?.ToObject<int>() ?? 0;
+        var version = json.PropertyOrDefault("FileVersion"u8, 0);
         return version switch
         {
             1           => LoadDesignV1(saveService, customizations, items, linkLoader, json),
-            FileVersion => LoadDesignV2(customizations, items, linkLoader, json),
+            2           => LoadDesignV2Or3(customizations, items, linkLoader, json, version),
+            FileVersion => LoadDesignV2Or3(customizations, items, linkLoader, json, version),
             _           => throw new Exception("The design to be loaded has no valid Version."),
         };
     }
 
     /// <summary> The values for gloss and specular strength were switched. Swap them for all appropriate designs. </summary>
     private static Design LoadDesignV1(SaveService saveService, CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader,
-        JObject json)
+        in JsonElement json)
     {
-        var design             = LoadDesignV2(customizations, items, linkLoader, json);
+        var design             = LoadDesignV2Or3(customizations, items, linkLoader, json, 2);
         var materialDesignData = design.GetMaterialDataRef();
-        if (materialDesignData.Values.Count == 0)
+        if (materialDesignData.Values.Count is 0)
             return design;
 
         var materialData = materialDesignData.Clone();
@@ -247,108 +266,195 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         }
     }
 
-    private static Design LoadDesignV2(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
+    private static Design LoadDesignV2Or3(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, in JsonElement json,
+        int version)
     {
-        var creationDate = json["CreationDate"]?.ToObject<DateTimeOffset>() ?? throw new ArgumentNullException("CreationDate");
+        var creationDate = json.TryReadProperty("CreationDate"u8, out DateTimeOffset? cd)
+            ? cd!.Value
+            : throw new Exception("Design creation date can not be null or unset.");
 
         var design = new Design(customizations, items)
         {
             CreationDate = creationDate,
-            Identifier   = json["Identifier"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Identifier"),
-            Name         = json["Name"]?.ToObject<string>() ?? throw new ArgumentNullException("Name"),
-            Description  = json["Description"]?.ToObject<string>() ?? string.Empty,
-            Tags         = ParseTags(json),
-            LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
-            QuickDesign  = json["QuickDesign"]?.ToObject<bool>() ?? true,
+            Identifier =
+                json.TryReadProperty("Identifier"u8, out Guid? id)
+                    ? id!.Value
+                    : throw new Exception("Design identifier can not be null or unset."),
+            Name        = json.TryReadProperty("Name"u8, out string? n) ? n! : throw new Exception("Design name can not be null or unset."),
+            Description = json.PropertyOrDefault("Description"u8, string.Empty),
+            Tags        = ParseTags(json),
+            LastEdit    = json.PropertyOrDefault("LastEdit"u8,    creationDate),
+            QuickDesign = json.PropertyOrDefault("QuickDesign"u8, true),
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
-        design.Path.Folder   = json["FileSystemFolder"]?.Value<string>() ?? string.Empty;
-        design.Path.SortName = json["SortOrderName"]?.Value<string>()?.FixName();
+        design.Path.Folder   = json.PropertyOrDefault("FileSystemFolder"u8, string.Empty);
+        design.Path.SortName = json.TryReadProperty("SortOrderName"u8, out string? sn, true) ? sn?.FixName() : null;
 
-        design.SetWriteProtected(json["WriteProtected"]?.ToObject<bool>() ?? false);
-        LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
-        LoadEquip(items, json["Equipment"], design, design.Name, true);
-        LoadBonus(items, design, json["Bonus"]);
-        LoadMods(json["Mods"], design);
-        LoadParameters(json["Parameters"], design, design.Name);
-        LoadMaterials(json["Materials"], design, design.Name);
-        LoadLinks(linkLoader, json["Links"], design);
-        design.Color                  = json["Color"]?.ToObject<string>() ?? string.Empty;
-        design.ForcedRedraw           = json["ForcedRedraw"]?.ToObject<bool>() ?? false;
-        design.ResetAdvancedDyes      = ParseCombinedItemSlotFlag(json["ResetAdvancedDyes"]);
-        design.ResetTemporarySettings = json["ResetTemporarySettings"]?.ToObject<bool>() ?? false;
-        design.RevertAdvancedDyes     = ParseCombinedItemSlotFlag(json["RevertAdvancedDyes"]);
+        design.SetWriteProtected(json.PropertyOrDefault("WriteProtected"u8, false));
+        LoadCustomize(customizations, json.TryReadObject("Customize"u8, out var c) ? c : null, design, design.Name, true, false);
+        LoadEquip(items, json.TryReadObject("Equipment"u8,              out var e) ? e : null, design, design.Name, true);
+        LoadBonus(items, design, json.TryReadObject("Bonus"u8,          out var b) ? b : null);
+        LoadMods(json.TryReadArray("Mods"u8, out var m) ? m : null, design, version);
+        LoadParameters(json.TryReadObject("Parameters"u8,   out var p) ? p : null, design, design.Name);
+        LoadMaterials(json.TryReadObject("Materials"u8,     out var mat) ? mat : null, design, design.Name);
+        LoadLinks(linkLoader, json.TryReadObject("Links"u8, out var l) ? l : null, design);
+        design.Color                  = json.PropertyOrDefault("Color"u8,        string.Empty);
+        design.ForcedRedraw           = json.PropertyOrDefault("ForcedRedraw"u8, false);
+        design.ResetAdvancedDyes      = ParseCombinedSlots(json.TryGetProperty("ResetAdvancedDyes"u8, out var reset) ? reset : null);
+        design.ResetTemporarySettings = json.PropertyOrDefault("ResetTemporarySettings"u8, false);
+        design.RevertAdvancedDyes     = ParseCombinedSlots(json.TryGetProperty("RevertAdvancedDyes"u8, out var revert) ? revert : null);
         return design;
 
-        static string[] ParseTags(JObject json)
+        static string[] ParseTags(in JsonElement json)
         {
-            var tags = json["Tags"]?.ToObject<string[]>() ?? [];
-            return tags.OrderBy(t => t).Distinct().ToArray();
-        }
+            if (!json.TryReadArray("Tags"u8, out var array))
+                return [];
 
-        static CombinedItemSlotFlag ParseCombinedItemSlotFlag(JToken? json)
-        {
-            if (json is null)
-                return 0;
+            List<string> entries = [];
+            foreach (var prop in array.EnumerateArray())
+            {
+                if (prop.ValueKind is JsonValueKind.String)
+                    entries.Add(prop.GetString()!);
+            }
 
-            if (json.Type is JTokenType.Boolean)
-                return (bool)json ? EquipFlagExtensions.AllCombined : 0;
-
-            return (CombinedItemSlotFlag)(uint)json;
+            return entries.OrderBy(t => t).Distinct().ToArray();
         }
     }
 
-    private static void LoadMods(JToken? mods, Design design)
+    private static void LoadMods(in JsonElement? mods, Design design, int version)
     {
-        if (mods is not JArray array)
+        if (mods?.ValueKind is not JsonValueKind.Array)
             return;
 
-        foreach (var tok in array)
+        foreach (var mod in mods.Value.EnumerateArray())
         {
-            var name      = tok["Name"]?.ToObject<string>();
-            var directory = tok["Directory"]?.ToObject<string>();
-            var enabled   = tok["Enabled"]?.ToObject<bool>() ?? false;
-            if (name == null || directory == null)
+            if (!mod.TryReadProperty("Name"u8, out string? name) || !mod.TryReadProperty("Directory"u8, out string? directory))
             {
                 Glamourer.Messager.NotificationMessage("The loaded design contains an invalid mod, skipped.", NotificationType.Warning);
                 continue;
             }
 
-            var forceInherit  = tok["Inherit"]?.ToObject<bool>() ?? false;
-            var removeSetting = tok["Remove"]?.ToObject<bool>() ?? false;
-            var settingsDict  = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
-            var settings      = new Dictionary<string, List<string>>(settingsDict.Count);
-            foreach (var (key, value) in settingsDict)
-                settings.Add(key, value);
-            var priority = tok["Priority"]?.ToObject<int>() ?? 0;
-            if (!design.AssociatedMods.TryAdd(new Mod(name, directory),
-                    new ModSettings(settings, priority, enabled, forceInherit, removeSetting)))
+            var preset = version <= 2 ? ReadV2Mods(mod) : ReadV3Mods(mod);
+            if (!design.AssociatedMods.TryAdd(new ModIdentifier(directory!, name!), preset))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
+        }
+
+        return;
+
+        static SettingPresetData ReadV3Mods(in JsonElement mod)
+            => SettingPresetData.FromElement(mod);
+
+        static SettingPresetData ReadV2Mods(in JsonElement mod)
+        {
+            var preset = SettingPresetData.Create();
+            if (mod.TryReadProperty("Priority"u8, out int? priority, true))
+            {
+                preset._hasPriority = priority.HasValue;
+                preset._priority    = priority.GetValueOrDefault(0);
+            }
+
+            if (mod.PropertyOrDefault("Remove"u8, false))
+                preset._state = (byte)ModState.RemoveTemporary;
+            else if (mod.PropertyOrDefault("Inherit"u8, false))
+                preset._state = (byte)ModState.Inherited;
+            else
+                preset._state = mod.TryReadProperty("Enabled"u8, out bool? value, true)
+                    ? value switch
+                    {
+                        null  => (byte)ModState.Ignored,
+                        true  => (byte)ModState.Enabled,
+                        false => (byte)ModState.Disabled,
+                    }
+                    : (byte)ModState.Ignored;
+
+            if (mod.TryReadObject("Settings"u8, out var settings))
+                foreach (var prop in settings.EnumerateObject())
+                {
+                    if (prop.Value.ValueKind is not JsonValueKind.Null and not JsonValueKind.Array)
+                        continue;
+
+                    var data = GroupSettingDataExtensions.Create();
+                    data.DisableAllUnknown = true;
+                    if (prop.Value.ValueKind is JsonValueKind.Array)
+                        foreach (var value in prop.Value.EnumerateArray())
+                        {
+                            if (value.ValueKind is JsonValueKind.String)
+                                data.Options.Add((Guid.Empty, value.GetString()!), (byte)OptionState.Enabled);
+                        }
+
+                    preset.Settings.Add((Guid.Empty, prop.Name), data);
+                }
+
+            return preset;
         }
     }
 
-    private static void LoadLinks(DesignLinkLoader linkLoader, JToken? links, Design design)
+    private static void LoadLinks(DesignLinkLoader linkLoader, in JsonElement? links, Design design)
     {
-        if (links is not JObject obj)
+        if (links is not { } j)
             return;
 
-        Parse(obj["Before"] as JArray, LinkOrder.Before);
-        Parse(obj["After"] as JArray,  LinkOrder.After);
+        Parse(j.TryReadArray("Before"u8, out var b) ? b : null, LinkOrder.Before);
+        Parse(j.TryReadArray("After"u8,  out var a) ? a : null, LinkOrder.After);
         return;
 
-        void Parse(JArray? array, LinkOrder order)
+        void Parse(in JsonElement? array, LinkOrder order)
         {
-            if (array == null)
+            if (array is not { } data)
                 return;
 
-            foreach (var jObj in array.OfType<JObject>())
+            foreach (var obj in data.EnumerateArray())
             {
-                var identifier = jObj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException(nameof(design));
-                var type       = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? 0);
-                var conditions = DesignConditionData.Deserialize(jObj["Conditions"]);
-                linkLoader.AddObject(design, new LinkData(identifier, type, conditions, order));
+                if (!obj.TryReadProperty("Design"u8, out Guid? identifier))
+                    throw new ArgumentNullException(nameof(design));
+
+                var type       = (ApplicationType)obj.PropertyOrDefault("Type"u8, 0u);
+                var conditions = DesignConditionData.Deserialize(obj.TryReadObject("Conditions"u8, out var c) ? c : null);
+                linkLoader.AddObject(design, new LinkData(identifier!.Value, type, conditions, order));
             }
+        }
+    }
+
+    private static ModelCombinedSlots ParseCombinedSlots(in JsonElement? json)
+    {
+        if (json is not { } j || j.ValueKind is JsonValueKind.Null)
+            return 0;
+
+        return j.ValueKind switch
+        {
+            JsonValueKind.True                                  => ModelCombinedSlotsExtensions.All,
+            JsonValueKind.False                                 => 0,
+            JsonValueKind.Number when j.TryGetUInt64(out var v) => ParseLegacyOrCompactValue(v),
+            JsonValueKind.Object                                => ParseObjectValue(j),
+            _                                                   => 0,
+        };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ModelCombinedSlots ParseLegacyOrCompactValue(ulong value)
+        {
+            // Legacy (CombinedItemSlotFlag) mask, or compact form for unambiguous values.
+            if ((value & ~(ulong)ModelCombinedSlotsExtensions.AllEquipmentPieces) is 0)
+                return (ModelCombinedSlots)value;
+
+            // Treat the legacy "All" value as the current "All" (that will be serialized as `true`).
+            if ((value & 0x1FFF) is 0x1FFF)
+                return ModelCombinedSlotsExtensions.All;
+
+            var equipment = (ModelCombinedSlots)value & ModelCombinedSlotsExtensions.AllEquipmentPieces;
+            var bonus     = (ModelCombinedSlots)(value << 4) & ModelCombinedSlotsExtensions.BonusItemFlagMask;
+            var mainhand  = (ModelCombinedSlots)(value << 22) & ModelCombinedSlots.Mainhand;
+            var offhand   = (ModelCombinedSlots)(value << 29) & ModelCombinedSlots.Offhand;
+            return equipment | bonus | mainhand | offhand;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ModelCombinedSlots ParseObjectValue(in JsonElement json)
+        {
+            var human    = json.PropertyOrDefault("Human"u8,    0UL);
+            var mainhand = json.PropertyOrDefault("Mainhand"u8, 0UL);
+            var offhand  = json.PropertyOrDefault("Offhand"u8,  0UL);
+            return (ModelCombinedSlots)(human | (mainhand << 32) | (offhand << 40));
         }
     }
 
@@ -361,11 +467,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
-        using var j      = new JsonTextWriter(writer);
-        j.Formatting = Formatting.Indented;
-        var obj = JsonSerialize();
-        obj.WriteTo(j);
+        using var j = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions);
+        Serialize(j);
     }
 
     public string LogName(string fileName)
@@ -378,4 +481,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     public string DisplayName
         => Name;
+
+    public static void Write(Utf8JsonWriter writer, in Design value, JsonSerializerOptions options)
+        => value.Serialize(writer);
 }

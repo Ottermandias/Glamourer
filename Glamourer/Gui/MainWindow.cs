@@ -11,14 +11,14 @@ namespace Glamourer.Gui;
 
 public sealed class MainWindow : Window, IDisposable
 {
-    private readonly Configuration     _config;
-    private readonly PenumbraService   _penumbra;
-    private readonly DesignQuickBar    _quickBar;
-    private readonly MainTabBar        _mainTabBar;
-    private readonly NavigationService _navigation;
-    private          bool              _ignorePenumbra;
+    private readonly Configuration      _config;
+    private readonly PenumbraSubscriber _penumbra;
+    private readonly DesignQuickBar     _quickBar;
+    private readonly MainTabBar         _mainTabBar;
+    private readonly NavigationService  _navigation;
+    private          bool               _ignorePenumbra;
 
-    public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
+    public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraSubscriber penumbra,
         MainTabBar mainTabBar, DesignQuickBar quickBar, NavigationService navigation)
         : base("###GlamourerMainWindow")
     {
@@ -36,8 +36,8 @@ public sealed class MainWindow : Window, IDisposable
         _mainTabBar = mainTabBar;
         IsOpen      = _config.OpenWindowAtStart;
 
-        _penumbra.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
-        _navigation.ToggleMainWindow  += SetOpen;
+        _penumbra.Ui.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
+        _navigation.ToggleMainWindow     += SetOpen;
     }
 
     public override void OnOpen()
@@ -56,8 +56,8 @@ public sealed class MainWindow : Window, IDisposable
 
     public void Dispose()
     {
-        _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
-        _navigation.ToggleMainWindow  -= SetOpen;
+        _penumbra.Ui.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
+        _navigation.ToggleMainWindow     -= SetOpen;
     }
 
     public override void Draw()
@@ -65,19 +65,15 @@ public sealed class MainWindow : Window, IDisposable
         var yPos = Im.Cursor.Y;
         if (!_penumbra.Available && !_ignorePenumbra)
         {
-            if (_penumbra.CurrentMajor is 0)
+            if (_penumbra.CurrentMajorVersion is 0)
                 DrawProblemWindow(
                     "Could not attach to Penumbra. Please make sure Penumbra is installed and running.\n\nPenumbra is required for Glamourer to work properly."u8);
-            else if (_penumbra is
-                     {
-                         CurrentMajor: PenumbraService.RequiredPenumbraBreakingVersion,
-                         CurrentMinor: >= PenumbraService.RequiredPenumbraFeatureVersion,
-                     })
+            else if (_penumbra.MatchesVersions)
                 DrawProblemWindow(
-                    $"You are currently not attached to Penumbra, seemingly by manually detaching from it.\n\nPenumbra's last API Version was {_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}.\n\nPenumbra is required for Glamourer to work properly.");
+                    $"You are currently not attached to Penumbra, seemingly by manually detaching from it.\n\nPenumbra's last API Version was {_penumbra.CurrentMajorVersion}.{_penumbra.CurrentMinorVersion}.\n\nPenumbra is required for Glamourer to work properly.");
             else
                 DrawProblemWindow(
-                    $"Attaching to Penumbra failed.\n\nPenumbra's API Version was {_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}, but Glamourer requires a version of {PenumbraService.RequiredPenumbraBreakingVersion}.{PenumbraService.RequiredPenumbraFeatureVersion}, where the major version has to match exactly, and the minor version has to be greater or equal.\nYou may need to update Penumbra or enable Testing Builds for it for this version of Glamourer.\n\nPenumbra is required for Glamourer to work properly.");
+                    $"Attaching to Penumbra failed.\n\nPenumbra's API Version was {_penumbra.CurrentMajorVersion}.{_penumbra.CurrentMinorVersion}, but Glamourer requires a version of {_penumbra.RequiredMajorVersion}.{_penumbra.RequiredMinorVersion}, where the major version has to match exactly, and the minor version has to be greater or equal.\nYou may need to update Penumbra or enable Testing Builds for it for this version of Glamourer.\n\nPenumbra is required for Glamourer to work properly.");
         }
         else
         {

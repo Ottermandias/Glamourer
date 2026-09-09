@@ -1,3 +1,4 @@
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
@@ -102,7 +103,7 @@ public static class UiHelpers
         using (Im.Disabled(locked))
         {
             using var id = Im.Id.Push(label);
-            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateNeutral.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateCross.Value()))
+            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateNeutral.Value, ColorId.TriStateCheck.Value, ColorId.TriStateCross.Value))
             {
                 (newValue, newApply) = apply switch
                 {
@@ -142,7 +143,7 @@ public static class UiHelpers
         var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
         ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
-            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+            hovering ? ColorId.FavoriteStarHovered.Value : favorite ? ColorId.FavoriteStarOn.Value : ColorId.FavoriteStarOff.Value);
         if (!Im.Item.Clicked())
             return false;
 
@@ -159,7 +160,7 @@ public static class UiHelpers
         var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
         ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
-            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+            hovering ? ColorId.FavoriteStarHovered.Value : favorite ? ColorId.FavoriteStarOn.Value : ColorId.FavoriteStarOff.Value);
         if (!Im.Item.Clicked())
             return false;
 
@@ -172,7 +173,7 @@ public static class UiHelpers
 
     private static readonly StringU8 Slots = new("slots"u8);
 
-    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
-        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined, bool readOnly = false)
-        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
+    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref ModelCombinedSlots slots,
+        ModelCombinedSlots allowedSlots = ModelCombinedSlotsExtensions.All, bool readOnly = false)
+        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => MaterialValueIndex.Min(slot).SlotName(), Slots, readOnly);
 }

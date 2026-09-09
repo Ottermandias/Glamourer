@@ -1,15 +1,14 @@
-﻿using Dalamud.Utility;
+﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Utility;
 using Glamourer.Config;
 using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Luna;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
@@ -50,18 +49,16 @@ public sealed class DesignManager : DesignEditor, IService
         Designs.Clear();
         var                                 skipped = 0;
         ThreadLocal<List<(Design, string)>> designs = new(() => [], true);
-        Parallel.ForEach(SaveService.FileNames.Designs(), (f, _) =>
+        Parallel.ForEach(SaveService.FileNames.Designs(), (f, s) =>
         {
             try
             {
-                var text   = File.ReadAllText(f.FullName);
-                var data   = JObject.Parse(text);
-                var design = Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data);
-                designs.Value!.Add((design, f.FullName));
+                var design = LoadDesign(linkLoader, f);
+                designs.Value!.Add((design, f));
             }
             catch (Exception ex)
             {
-                Glamourer.Log.Error($"Could not load design, skipped:\n{ex}");
+                Glamourer.Log.Error($"Could not load design {Path.GetFileNameWithoutExtension(f)}, skipped:\n{ex}");
                 Interlocked.Increment(ref skipped);
             }
         });
@@ -108,7 +105,7 @@ public sealed class DesignManager : DesignEditor, IService
             Name                   = actualName,
             Index                  = Designs.Count,
             ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? EquipFlagExtensions.AllCombined : 0,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? ModelCombinedSlotsExtensions.All : 0,
             QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
@@ -132,7 +129,7 @@ public sealed class DesignManager : DesignEditor, IService
             Name                   = actualName,
             Index                  = Designs.Count,
             ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? EquipFlagExtensions.AllCombined : 0,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? ModelCombinedSlotsExtensions.All : 0,
             QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
@@ -205,7 +202,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit    = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Changed description of design {design.Identifier}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedDescription, design, new DescriptionTransaction(oldDescription, description)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedDescription, design,
+            new DescriptionTransaction(oldDescription, description)));
     }
 
     /// <summary> Change the associated color of a design. </summary>
@@ -219,7 +217,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Changed color of design {design.Identifier}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedColor, design, new DesignColorTransaction(oldColor, newColor)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedColor, design,
+            new DesignColorTransaction(oldColor, newColor)));
     }
 
     /// <summary> Add a new tag to a design. The tags remain sorted. </summary>
@@ -267,31 +266,31 @@ public sealed class DesignManager : DesignEditor, IService
     }
 
     /// <summary> Add an associated mod to a design. </summary>
-    public void AddMod(Design design, Mod mod, ModSettings settings)
+    public void AddMod(Design design, in ModIdentifier mod, in SettingPresetData settings)
     {
         if (!design.AssociatedMods.TryAdd(mod, settings))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} to design {design.Identifier}.");
+        Glamourer.Log.Debug($"Added associated mod {mod.Identifier} to design {design.Identifier}.");
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings)));
     }
 
     /// <summary> Remove an associated mod from a design. </summary>
-    public void RemoveMod(Design design, Mod mod)
+    public void RemoveMod(Design design, in ModIdentifier mod)
     {
         if (!design.AssociatedMods.Remove(mod, out var settings))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Removed associated mod {mod.DirectoryName} from design {design.Identifier}.");
+        Glamourer.Log.Debug($"Removed associated mod {mod.Identifier} from design {design.Identifier}.");
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.RemovedMod, design, new ModRemovedTransaction(mod, settings)));
     }
 
     /// <summary> Add or update an associated mod to a design. </summary>
-    public void UpdateMod(Design design, Mod mod, ModSettings settings)
+    public void UpdateMod(Design design, in ModIdentifier mod, in SettingPresetData settings)
     {
         var hasOldSettings = design.AssociatedMods.TryGetValue(mod, out var oldSettings);
         design.AssociatedMods[mod] = settings;
@@ -299,12 +298,13 @@ public sealed class DesignManager : DesignEditor, IService
         SaveService.QueueSave(design);
         if (hasOldSettings)
         {
-            Glamourer.Log.Debug($"Updated associated mod {mod.DirectoryName} from design {design.Identifier}.");
-            DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.UpdatedMod, design, new ModUpdatedTransaction(mod, oldSettings, settings)));
+            Glamourer.Log.Debug($"Updated associated mod {mod.Identifier} from design {design.Identifier}.");
+            DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.UpdatedMod, design,
+                new ModUpdatedTransaction(mod, oldSettings, settings)));
         }
         else
         {
-            Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} from design {design.Identifier}.");
+            Glamourer.Log.Debug($"Added associated mod {mod.Identifier} from design {design.Identifier}.");
             DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings)));
         }
     }
@@ -348,7 +348,7 @@ public sealed class DesignManager : DesignEditor, IService
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ForceRedraw, design));
     }
 
-    public void ChangeResetAdvancedDyes(Design design, CombinedItemSlotFlag resetAdvancedDyes)
+    public void ChangeResetAdvancedDyes(Design design, ModelCombinedSlots resetAdvancedDyes)
     {
         if (design.ResetAdvancedDyes == resetAdvancedDyes)
             return;
@@ -372,7 +372,7 @@ public sealed class DesignManager : DesignEditor, IService
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ResetTemporarySettings, design));
     }
 
-    public void ChangeRevertAdvancedDyes(Design design, CombinedItemSlotFlag revertAdvancedDyes)
+    public void ChangeRevertAdvancedDyes(Design design, ModelCombinedSlots revertAdvancedDyes)
     {
         if (design.RevertAdvancedDyes == revertAdvancedDyes)
             return;
@@ -394,7 +394,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of customization {idx.ToName()} to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyCustomize, design, new ApplicationTransaction(idx, !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyCustomize, design,
+            new ApplicationTransaction(idx, !value, value)));
     }
 
     /// <summary> Change whether to apply a specific equipment piece. </summary>
@@ -406,7 +407,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of {slot} equipment piece to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyEquip, design, new ApplicationTransaction((slot, false), !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyEquip, design,
+            new ApplicationTransaction((slot, false), !value, value)));
     }
 
     /// <summary> Change whether to apply a specific equipment piece. </summary>
@@ -418,7 +420,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of {slot} bonus item to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyBonusItem, design, new ApplicationTransaction(slot, !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyBonusItem, design,
+            new ApplicationTransaction(slot, !value, value)));
     }
 
     /// <summary> Change whether to apply a specific stain. </summary>
@@ -430,7 +433,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of stain of {slot} equipment piece to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyStain, design, new ApplicationTransaction((slot, true), !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyStain, design,
+            new ApplicationTransaction((slot, true), !value, value)));
     }
 
     /// <summary> Change whether to apply a specific crest visibility. </summary>
@@ -442,7 +446,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of crest visibility of {slot} equipment piece to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyCrest, design, new ApplicationTransaction(slot, !value, value)));
+        DesignChanged.Invoke(
+            new DesignChanged.Arguments(DesignChanged.Type.ApplyCrest, design, new ApplicationTransaction(slot, !value, value)));
     }
 
     /// <summary> Change the application value of one of the meta flags. </summary>
@@ -454,7 +459,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of {metaIndex} to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.Other, design, new ApplicationTransaction(metaIndex, !value, value)));
+        DesignChanged.Invoke(
+            new DesignChanged.Arguments(DesignChanged.Type.Other, design, new ApplicationTransaction(metaIndex, !value, value)));
     }
 
     /// <summary> Change the application value of a customize parameter. </summary>
@@ -466,7 +472,8 @@ public sealed class DesignManager : DesignEditor, IService
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of parameter {flag} to {value}.");
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyParameter, design, new ApplicationTransaction(flag, !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyParameter, design,
+            new ApplicationTransaction(flag, !value, value)));
     }
 
     /// <summary> Change multiple application values at once. </summary>
@@ -504,14 +511,103 @@ public sealed class DesignManager : DesignEditor, IService
 
     #endregion
 
+    public void Reload(DesignLinkLoader linkLoader, Design design)
+    {
+        var file = SaveService.FileNames.DesignFile(design);
+        if (!File.Exists(file))
+        {
+            Glamourer.Messager.NotificationMessage($"Reloading the design {design.DisplayName} failed: The design file does not exist anymore.", NotificationType.Warning, false);
+            return;
+        }
+
+        try
+        {
+            var copy = LoadDesign(linkLoader, file);
+            Rename(design, copy.Name);
+            ChangeDescription(design, copy.Description);
+            ChangeColor(design, copy.Color);
+            if (!design.Tags.SequenceEqual(copy.Tags))
+            {
+                design.Tags = [];
+                foreach(var tag in copy.Tags)
+                    AddTag(design, tag);
+            }
+
+            design.AssociatedMods.Clear();
+            foreach(var (mod, settings) in copy.AssociatedMods)
+                AddMod(design, mod, settings);
+
+            SetWriteProtection(design, copy.WriteProtected());
+            SetQuickDesign(design, copy.QuickDesign);
+            ChangeForcedRedraw(design, copy.ForcedRedraw);
+            ChangeResetAdvancedDyes(design, copy.ResetAdvancedDyes);
+            ChangeResetTemporarySettings(design, copy.ResetTemporarySettings);
+            ChangeRevertAdvancedDyes(design, copy.RevertAdvancedDyes);
+            foreach (var customize in CustomizationExtensions.All)
+            {
+                ChangeApplyCustomize(design, customize, copy.DoApplyCustomize(customize));
+            }
+            foreach (var item in EquipSlotExtensions.EquipmentSlots)
+            {
+                ChangeApplyItem(design, item, copy.DoApplyEquip(item));
+                ChangeApplyStains(design, item, copy.DoApplyStain(item));
+            }
+
+            foreach (var item in BonusExtensions.AllFlags)
+            {
+                ChangeApplyBonusItem(design, item, copy.DoApplyBonusItem(item));
+            }
+
+            foreach (var item in EquipSlotExtensions.WeaponSlots)
+            {
+                ChangeApplyItem(design, item, copy.DoApplyEquip(item));
+                ChangeApplyStains(design, item, copy.DoApplyStain(item));
+            }
+
+            foreach (var crest in CrestExtensions.AllRelevantSet)
+            {
+                ChangeApplyCrest(design, crest, copy.DoApplyCrest(crest));
+            }
+
+            foreach(var meta in MetaExtensions.AllRelevant)
+                ChangeApplyMeta(design, meta, copy.DoApplyMeta(meta));
+
+            foreach(var parameter in CustomizeParameterExtensions.AllFlags)
+                ChangeApplyParameter(design, parameter, copy.DoApplyParameter(parameter));
+
+
+
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex, $"Reloading the design {design.DisplayName} failed: The design file could not be parsed", NotificationType.Warning, false);
+        }
+
+    }
+
+    private Design LoadDesign(DesignLinkLoader linkLoader, string filename)
+    {
+        var text = JsonFunctions.ReadUtf8Bytes(filename, out _);
+        var data = JsonDocument.Parse(text, JsonFunctions.DocumentOptions);
+        return Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data.RootElement);
+    }
+
     public void UndoDesignChange(Design design)
     {
         if (!UndoStore.Remove(design.Identifier, out var otherData))
             return;
 
         var other = CreateTemporary();
-        other.SetDesignData(Customizations, otherData);
+        other.SetDesignData(Customizations, otherData.Item1);
+        other.Application = ApplicationCollection.All;
+        var materials = other.GetMaterialDataRef();
+        foreach (var (key, value) in otherData.Item2)
+            materials.AddOrUpdateValue(key, value);
         ApplyDesign(design, other);
+        var designMaterials = design.GetMaterialDataRef();
+        designMaterials.Clear();
+        foreach (var (key, value) in other.Materials)
+            designMaterials.AddOrUpdateValue(key, value);
     }
 
     private void MigrateOldDesigns()
@@ -525,8 +621,8 @@ public sealed class DesignManager : DesignEditor, IService
         var oldDesigns = Designs.ToList();
         try
         {
-            var text                    = File.ReadAllText(SaveService.FileNames.MigrationDesignFile);
-            var dict                    = JsonConvert.DeserializeObject<Dictionary<string, string>>(text) ?? new Dictionary<string, string>();
+            var text = JsonFunctions.ReadUtf8Bytes(SaveService.FileNames.MigrationDesignFile, out _);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text.Span) ?? [];
             foreach (var (name, base64) in dict)
             {
                 try
@@ -539,7 +635,7 @@ public sealed class DesignManager : DesignEditor, IService
                         Identifier   = CreateNewGuid(),
                         Name         = actualName,
                     };
-                    design.MigrateBase64(Customizations, Items, _humans, base64);
+                    design.MigrateBase64Data(Customizations, Items, _humans, Convert.FromBase64String(base64));
                     if (!oldDesigns.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");

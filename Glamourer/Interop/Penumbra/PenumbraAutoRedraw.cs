@@ -5,15 +5,27 @@ using Glamourer.Events;
 using Glamourer.State;
 using Luna;
 using Penumbra.Api.Enums;
+using Penumbra.Api.Wrappers;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Penumbra;
+
+public class PenumbraAutoRedrawSkip : IService
+{
+    private bool _skipAutoUpdates;
+
+    public BoolSetter SkipAutoUpdates(bool skip)
+        => new(ref _skipAutoUpdates, skip);
+
+    public bool Skip
+        => _skipAutoUpdates;
+}
 
 public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
 {
     private const    int                    WaitFrames = 5;
     private readonly Configuration          _config;
-    private readonly PenumbraService        _penumbra;
+    private readonly PenumbraSubscriber     _penumbra;
     private readonly StateManager           _state;
     private readonly ActorObjectManager     _objects;
     private readonly IFramework             _framework;
@@ -21,26 +33,28 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
     private readonly PenumbraAutoRedrawSkip _skip;
 
 
-    public PenumbraAutoRedraw(PenumbraService penumbra, Configuration config, StateManager state, ActorObjectManager objects,
+    public PenumbraAutoRedraw(PenumbraSubscriber penumbra, Configuration config, StateManager state, ActorObjectManager objects,
         IFramework framework,
         StateChanged stateChanged, PenumbraAutoRedrawSkip skip)
     {
-        _penumbra                   =  penumbra;
-        _config                     =  config;
-        _state                      =  state;
-        _objects                    =  objects;
-        _framework                  =  framework;
-        _stateChanged               =  stateChanged;
-        _skip                       =  skip;
-        _penumbra.ModSettingChanged += OnModSettingChange;
-        _framework.Update           += OnFramework;
+        _penumbra                                =  penumbra;
+        _config                                  =  config;
+        _state                                   =  state;
+        _objects                                 =  objects;
+        _framework                               =  framework;
+        _stateChanged                            =  stateChanged;
+        _skip                                    =  skip;
+        _penumbra.Collections.ModSettingsChanged += OnModSettingsChange;
+        _penumbra.Collections.CollectionChanged  += OnCollectionChange;
+        _framework.Update                        += OnFramework;
         _stateChanged.Subscribe(OnStateChanged, StateChanged.Priority.PenumbraAutoRedraw);
     }
 
     public void Dispose()
     {
-        _penumbra.ModSettingChanged -= OnModSettingChange;
-        _framework.Update           -= OnFramework;
+        _penumbra.Collections.ModSettingsChanged -= OnModSettingsChange;
+        _penumbra.Collections.CollectionChanged  -= OnCollectionChange;
+        _framework.Update                        -= OnFramework;
         _stateChanged.Unsubscribe(OnStateChanged);
     }
 
@@ -72,8 +86,11 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
         }
     }
 
-    private void OnModSettingChange(ModSettingChange type, Guid collectionId, string mod, bool inherited)
+    private void OnModSettingsChange(in ModSettingsChangedArguments arguments)
     {
+        // Can only be triggered when subscribed to Penumbra.
+        var type         = arguments.Type;
+        var collectionId = arguments.Collection;
         if (type is ModSettingChange.TemporaryMod)
         {
             _framework.RunOnFrameworkThread(() =>
@@ -83,7 +100,7 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
                     if (!_objects.TryGetValue(id, out var actors) || !actors.Valid)
                         continue;
 
-                    var collection = _penumbra.GetActorCollection(actors.Objects[0], out _);
+                    var collection = _penumbra.Collections.ObjectCollectionId(actors.Objects[0].Index).Identifier;
                     if (collection != collectionId)
                         continue;
 
@@ -99,7 +116,7 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
         else if (_config.AutoRedrawEquipOnChanges && !_skip.Skip)
         {
             // Only update once per frame.
-            var playerName = _penumbra.GetCurrentPlayerCollection();
+            var playerName = _penumbra.Collections.PlayerCollectionId.Identifier;
             if (playerName != collectionId)
                 return;
 
@@ -115,5 +132,27 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
                     $"Automatically applied mod settings of type {type} to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
             });
         }
+    }
+
+    private void OnCollectionChange(in CollectionChangedArguments arguments)
+    {
+        if (!_config.AutoRedrawEquipOnChanges || _skip.Skip)
+            return;
+
+        if ((byte)arguments.Type is ApiCollectionTypeExtensions.Inactive or ApiCollectionTypeExtensions.Temporary)
+            return;
+
+        // Only update once per frame.
+        var currentFrame = _framework.LastUpdateUTC;
+        if (currentFrame == _frame)
+            return;
+
+        _frame = currentFrame;
+        _framework.RunOnFrameworkThread(() =>
+        {
+            _state.ReapplyState(_objects.Player, false, StateSource.IpcManual, true);
+            Glamourer.Log.Debug(
+                $"Automatically applied collection assignment change to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
+        });
     }
 }

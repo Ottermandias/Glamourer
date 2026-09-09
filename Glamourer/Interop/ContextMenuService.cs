@@ -138,15 +138,15 @@ public sealed class ContextMenuService : IDisposable, IRequiredService
             return;
 
         var slot = _lastItem.Type.ToSlot();
-        _state.ChangeEquip(state, slot, _lastItem, _lastStains[0], ApplySettings.Manual);
+        _state.ChangeEquip(state, slot, _lastItem, _lastStains, ApplySettings.Manual);
         if (!_lastItem.Type.ValidOffhand().IsOffhandType())
             return;
 
         if (_lastItem.PrimaryId.Id is > 1600 and < 1651
          && _items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.Hands, out var gauntlets))
-            _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStains[0], ApplySettings.Manual);
+            _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStains, ApplySettings.Manual);
         if (_items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.OffHand, out var offhand))
-            _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStains[0], ApplySettings.Manual);
+            _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStains, ApplySettings.Manual);
     }
 
     private bool HandleItem(ItemId id)
