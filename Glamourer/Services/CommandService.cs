@@ -83,10 +83,12 @@ public class CommandService : IDisposable, IApiService
     {
         if (arguments.Length > 0)
         {
-            if (arguments.StartsWith("equip ") || arguments.StartsWith("e "))
+            arguments = arguments.ToLowerInvariant();
+            var args = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (args[0] is "equip" or "e")
             {
                 _equipmentBar.IsOpen ^= true;
-                var args = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                
                 if (args.Length is not 2)
                     return;
 
@@ -112,7 +114,7 @@ public class CommandService : IDisposable, IApiService
                 return;
             }
 
-            switch (arguments)
+            switch (args[0])
             {
                 case "qdb":
                 case "quick":
@@ -120,29 +122,16 @@ public class CommandService : IDisposable, IApiService
                 case "designs":
                 case "design":
                 case "design bar":
-                    _config.Ephemeral.ShowDesignQuickBar = !_config.Ephemeral.ShowDesignQuickBar;
+                    _config.Ephemeral.ShowDesignQuickBar = ParseTrueFalse(args, _config.Ephemeral.ShowDesignQuickBar);
                     _config.Ephemeral.Save();
                     return;
                 case "lock":
                 case "unlock":
-                    _config.Ephemeral.LockMainWindow = !_config.Ephemeral.LockMainWindow;
+                    _config.Ephemeral.LockMainWindow = ParseTrueFalse(args, _config.Ephemeral.LockMainWindow);
                     _config.Ephemeral.Save();
                     return;
-                case "equip":
-                case "e":
-                    if (_stateSelection.State is null)
-                    {
-                        var (ident, data) = _objects.PlayerData;
-                        _stateSelection.Select(ident, data);
-                        if (_stateSelection.State is null)
-                            _chat.Print(new SeStringBuilder().AddRed("No valid state was selected, or could be created for the current player.")
-                                .BuiltString);
-                    }
-
-                    _equipmentBar.IsOpen ^= true;
-                    return;
                 case "automation":
-                    var newValue = !_config.EnableAutoDesigns;
+                    var newValue = ParseTrueFalse(args, _config.EnableAutoDesigns);
                     _config.EnableAutoDesigns = newValue;
                     _autoDesignApplier.OnEnableAutoDesignsChanged(newValue);
                     _config.Save();
@@ -152,18 +141,33 @@ public class CommandService : IDisposable, IApiService
                     _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ")
                         .AddRed("/glamourer")
                         .AddText(" for application commands.").BuiltString);
-                    _chat.Print(new SeStringBuilder().AddCommand("qdb", "Toggles the quick design bar on or off.")
+                    _chat.Print(new SeStringBuilder().AddCommand("qdb", "Toggles the quick design bar on or off, or supply 'on' or 'off' to force specific state.")
                         .BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("equip",
                             "Toggles the compact equipment bar on or off. Note that showing the bar closes the main window if it is open.")
                         .BuiltString);
                     _chat.Print(new SeStringBuilder()
-                        .AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
+                        .AddCommand("lock", "Toggles the lock of the main window on or off, or supply 'on' or 'off' to force specific state.").BuiltString);
+                    _chat.Print(new SeStringBuilder()
+                        .AddCommand("automation", "Toggles the general application of automation on or off, or supply 'on' or 'off' to force specific state.").BuiltString);
                     return;
             }
         }
 
         _mainWindow.Toggle();
+    }
+
+    private static bool ParseTrueFalse(string[] arguments, bool currentValue)
+    {
+        if (arguments.Length is 1)
+            return !currentValue;
+
+        return arguments[1].ToLowerInvariant() switch
+        {
+            "enabled" or "enable" or "on" or "true"     => true,
+            "disabled" or "disable" or "off" or "false" => false,
+            _                                           => !currentValue,
+        };
     }
 
     private void OnGlamour(string command, string arguments)
