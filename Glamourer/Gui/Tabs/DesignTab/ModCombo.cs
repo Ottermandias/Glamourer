@@ -99,14 +99,13 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
 
     public static void DrawSettingsRight(in SettingPresetData settings)
     {
-        foreach (var setting in settings.Settings)
+        foreach (var (_, data) in settings.Settings)
         {
-            // TODO presets
-            //if (setting.Value.Count is 0)
-            //    Im.Text("<None Enabled>"u8);
-            //else
-            //    foreach (var option in setting.Value)
-            //        Im.Text(option);
+            var enabled = data.Enabled().Select(o => o.Name ?? o.Identifier.ToString()).ToArray();
+            if (enabled.Length is 0)
+                Im.Text("<None Enabled>"u8);
+            else
+                Im.Text(string.Join(", ", enabled));
         }
     }
 
