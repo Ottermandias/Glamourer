@@ -482,7 +482,7 @@ public class StateEditor(
         else
             merged = merger.Merge(d.AllLinks(true, ActorConditions(state)),
                 state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
-                false, Config.AlwaysApplyAssociatedMods);
+                false, settings.ForceModAssociations ?? Config.AlwaysApplyAssociatedMods);
 
         ApplyDesign(data, merged, settings with
         {
