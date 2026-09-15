@@ -322,7 +322,7 @@ public sealed unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value + (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize, false);
             }
 
             Im.Line.Same();
@@ -333,14 +333,14 @@ public sealed unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value - (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize, false);
             }
 
             Im.Line.Same();
             if (Im.SmallButton("Reset"u8))
             {
                 modelCustomize.Set(type, actorCustomize[type]);
-                changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize, false);
             }
 
             id.Pop();

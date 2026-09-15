@@ -1,5 +1,4 @@
 ﻿using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Events;
 using Luna;
@@ -68,19 +67,26 @@ public sealed unsafe class ChangeCustomizeService : EventBase<ChangeCustomizeSer
 
     private Hook<ChangeCustomizeDelegate> _changeCustomizeHook;
 
-    public bool UpdateCustomize(Model model, CustomizeArray customize)
+    public bool UpdateCustomize(Model model, CustomizeArray customize, bool forceCustomizeUpdates)
     {
         if (!model.IsHuman)
             return false;
 
         Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
         using var _   = InUpdate.EnterMethod();
-        var       ret = _original(model.AsHuman, (Human.DrawData*)customize.Data, true);
+        if (forceCustomizeUpdates)
+        {
+            // Hair compares the current customize ID with the separately stored HairId.
+            // We can enforce a hair update by setting the HairId before calling original.
+            model.AsHuman->HairId = 0;
+        }
+
+        var ret = _original(model.AsHuman, (Human.DrawData*)customize.Data, true);
         return ret;
     }
 
-    public bool UpdateCustomize(Actor actor, CustomizeArray customize)
-        => UpdateCustomize(actor.Model, customize);
+    public bool UpdateCustomize(Actor actor, CustomizeArray customize, bool forceCustomizeUpdates)
+        => UpdateCustomize(actor.Model, customize, forceCustomizeUpdates);
 
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {

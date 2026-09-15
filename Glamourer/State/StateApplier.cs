@@ -61,7 +61,7 @@ public class StateApplier(
             var flags = CustomizeArray.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
             {
-                changeCustomize.UpdateCustomize(mdl, customize);
+                changeCustomize.UpdateCustomize(mdl, customize, true);
             }
             else if (data.Objects.Count > 1 && objects.IsInGPose && !actor.IsGPoseOrCutscene)
             {
