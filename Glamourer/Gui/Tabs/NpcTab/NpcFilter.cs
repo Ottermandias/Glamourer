@@ -1,4 +1,5 @@
 ﻿using Glamourer.Config;
+using Glamourer.Services;
 using ImSharp;
 using Luna;
 
@@ -6,6 +7,8 @@ namespace Glamourer.Gui.Tabs.NpcTab;
 
 public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheItem, NpcFilter.NpcFilterToken>, IUiService
 {
+    private readonly ClanGenderFilter _clanGender;
+
     public enum TokenType : byte
     {
         Name,
@@ -13,11 +16,40 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
         Color,
     }
 
-    public NpcFilter(Configuration config)
+    public NpcFilter(Configuration config, CustomizeService customize)
     {
+        _clanGender = new ClanGenderFilter(customize);
         if (config.RememberNpcFilter)
             Set(config.Filters.NpcFilter);
         FilterChanged += () => config.Filters.NpcFilter = Text;
+    }
+
+    public bool DrawSelectors(Vector2 availableRegion)
+    {
+        var changes = _clanGender.DrawSelectors(availableRegion);
+        if (changes)
+            InvokeEvent();
+
+        return changes;
+    }
+
+    public override bool Clear()
+    {
+        var changes = _clanGender.Clear();
+        if (!SetInternal(string.Empty) && !changes)
+            return false;
+
+        InvokeEvent();
+        return true;
+    }
+
+    public override bool IsEmpty
+        => base.IsEmpty && _clanGender.IsEmpty;
+
+    public override bool WouldBeVisible(in NpcCacheItem cacheItem, int globalIndex)
+    {
+        var customize = cacheItem.Npc.Customize;
+        return _clanGender.Matches(customize.Clan, customize.Gender) && base.WouldBeVisible(cacheItem, globalIndex);
     }
 
     protected override void DrawTooltip()

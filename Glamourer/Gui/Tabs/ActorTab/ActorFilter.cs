@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Plugin.Services;
 using Glamourer.Config;
+using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -9,13 +10,15 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
 {
-    private readonly IPlayerState _playerState;
-    private readonly FilterConfig _config;
+    private readonly IPlayerState      _playerState;
+    private readonly FilterConfig      _config;
+    private readonly ClanGenderFilter _clanGender;
 
-    public ActorFilter(IPlayerState playerState, Configuration config)
+    public ActorFilter(IPlayerState playerState, Configuration config, CustomizeService customize)
     {
-        _playerState  =  playerState;
-        _config       =  config.Filters;
+        _playerState = playerState;
+        _config      = config.Filters;
+        _clanGender  = new ClanGenderFilter(customize);
         FilterChanged += () => { _config.ActorFilter = Text; };
         if (config.RememberActorFilter)
             Set(_config.ActorFilter);
@@ -23,13 +26,24 @@ public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
 
     public override bool Clear()
     {
-        if (_config.ActorTypeFilter is ActorTypeFilter.None)
-            return base.Clear();
-
+        var changes = _clanGender.Clear();
+        changes |= _config.ActorTypeFilter is not ActorTypeFilter.None;
         _config.ActorTypeFilter = ActorTypeFilter.None;
-        SetInternal(string.Empty);
+        if (!SetInternal(string.Empty) && !changes)
+            return false;
+
         InvokeEvent();
         return true;
+    }
+
+    public bool DrawSelectors(Vector2 availableRegion)
+    {
+        var changes = _clanGender.DrawSelectors(availableRegion);
+
+        if (changes)
+            InvokeEvent();
+
+        return changes;
     }
 
     private bool DrawCombo()
@@ -93,6 +107,8 @@ public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
     public override bool WouldBeVisible(in ActorCacheItem item, int globalIndex)
     {
         if (!base.WouldBeVisible(item, globalIndex))
+            return false;
+        if (!_clanGender.Matches(item.Clan, item.Gender))
             return false;
 
         switch (item.Identifier.Type)
