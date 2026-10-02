@@ -10,14 +10,14 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
 {
-    private readonly IPlayerState      _playerState;
-    private readonly FilterConfig      _config;
+    private readonly IPlayerState _playerState;
+    private readonly FilterConfig _config;
     private readonly ClanGenderFilter _clanGender;
 
     public ActorFilter(IPlayerState playerState, Configuration config, CustomizeService customize)
     {
-        _playerState = playerState;
-        _config      = config.Filters;
+        _playerState  =  playerState;
+        _config       =  config.Filters;
         _clanGender  = new ClanGenderFilter(customize);
         FilterChanged += () => { _config.ActorFilter = Text; };
         if (config.RememberActorFilter)
