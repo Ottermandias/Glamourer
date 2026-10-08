@@ -62,7 +62,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
 
     private static void DrawTooltip(in CacheItem item)
     {
-        using var style = ImStyleSingle.PopupBorderThickness.Push(2 * Im.Style.GlobalScale);
+        using var style = Im.Style.PushDefault().Push(ImStyleSingle.PopupBorderThickness, 2 * Im.Style.GlobalScale);
         using var tt    = Im.Tooltip.Begin();
 
         Im.Dummy(ImEx.ScaledVectorX(300));

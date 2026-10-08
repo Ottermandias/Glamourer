@@ -140,8 +140,10 @@ public sealed class StateListener : IDisposable, IRequiredService
              && actor.AsCharacter->GetObjectKind() is ObjectKind.EventNpc;
             switch (UpdateBaseData(actor, _creatingState, modelId, args.Customize, args.EquipData))
             {
-                // TODO 20260824 handle right
-                case UpdateState.Change:      break;
+                case UpdateState.Change:
+                    // For a change in the model ID, we reset all changes and set the glamourer state back to the game state.
+                    _creatingState.ModelData = _creatingState.BaseData;
+                    break;
                 case UpdateState.Transformed: break;
                 case UpdateState.NoChange:
 
