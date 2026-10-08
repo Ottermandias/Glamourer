@@ -1,17 +1,49 @@
 ﻿using Glamourer.Config;
 using ImSharp;
 using Luna;
+using Glamourer.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, DesignFileSystemCache.DesignData, DesignFilterToken>,
     IFileSystemFilter<DesignFileSystemCache.DesignData>, IUiService
 {
-    public DesignFilter(Configuration config)
+    private readonly ClanGenderFilter _clanGender;
+
+    public DesignFilter(Configuration config, CustomizeService customize)
     {
+        _clanGender = new ClanGenderFilter(customize);
         if (config.RememberDesignFilter)
             Set(config.Filters.DesignFilter);
         FilterChanged += () => config.Filters.DesignFilter = Text;
+    }
+
+    public bool DrawSelectors(Vector2 availableRegion)
+    {
+        var changes = _clanGender.DrawSelectors(availableRegion);
+        if (changes)
+            InvokeEvent();
+
+        return changes;
+    }
+
+    public override bool Clear()
+    {
+        var changes = _clanGender.Clear();
+        if (!SetInternal(string.Empty) && !changes)
+            return false;
+
+        InvokeEvent();
+        return true;
+    }
+
+    public override bool IsEmpty
+        => base.IsEmpty && _clanGender.IsEmpty;
+
+    public override bool WouldBeVisible(in DesignFileSystemCache.DesignData cacheItem, int globalIndex)
+    {
+        var customize = cacheItem.Node.Value.DesignData.Customize;
+        return _clanGender.Matches(customize.Clan, customize.Gender) && base.WouldBeVisible(cacheItem, globalIndex);
     }
 
     protected override void DrawTooltip()
@@ -111,6 +143,9 @@ public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, Design
 
     public bool WouldBeVisible(in FileSystemFolderCache folder)
     {
+        if (!_clanGender.IsEmpty)
+            return false;
+
         switch (State)
         {
             case FilterState.NoFilters: return true;

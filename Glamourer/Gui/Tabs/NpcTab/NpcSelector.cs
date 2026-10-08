@@ -22,8 +22,13 @@ public sealed class NpcSelector(
 
     public void Draw()
     {
+        _filter.DrawSelectors(Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         Im.Cursor.Y += Im.Style.FramePadding.Y;
         var       cache   = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(this));
+        using var child = Im.Child.Begin("NpcList"u8, Im.ContentRegion.Available);
+        if (!child)
+            return;
+
         using var clipper = new Im.ListClipper(cache.Count, Im.Style.TextHeightWithSpacing);
         using var color   = Im.Color.Empty();
         foreach (var item in clipper.Iterate(cache))

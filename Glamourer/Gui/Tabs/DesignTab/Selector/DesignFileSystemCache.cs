@@ -37,6 +37,8 @@ public sealed class DesignFileSystemCache : FileSystemCache<DesignFileSystemCach
             case DesignChanged.Type.RemovedMod:
             case DesignChanged.Type.UpdatedMod:
             case DesignChanged.Type.ChangedLink:
+            case DesignChanged.Type.Customize:
+            case DesignChanged.Type.EntireCustomize:
             case DesignChanged.Type.Equip:
             case DesignChanged.Type.BonusItem:
             case DesignChanged.Type.Weapon:

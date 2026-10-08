@@ -14,17 +14,19 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
     internal readonly DesignChanged DesignChanged;
     internal readonly DesignColors  DesignColors;
     internal readonly DesignManager Manager;
+    internal readonly DesignFilter  Filter;
 
     public DesignFileSystemDrawer(MessageService messager, DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter,
-        Configuration config,
+        Configuration config, DesignFilter filter,
         DesignApplier designApplier, DesignChanged designChanged, DesignColors designColors)
-        : base(messager, fileSystem, new DesignFilter(config))
+        : base(messager, fileSystem, filter)
     {
         Manager       = manager;
         Config        = config;
         DesignApplier = designApplier;
         DesignChanged = designChanged;
         DesignColors  = designColors;
+        Filter        = filter;
 
         MainContext.AddButton(new GlobalSortModeSelector(this, m =>
         {
@@ -83,6 +85,17 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
 
     public override ReadOnlySpan<byte> Id
         => "Designs"u8;
+
+    public override void Draw()
+    {
+        Filter.DrawSelectors(Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+        Im.Cursor.Y += Im.Style.FramePadding.Y;
+        using var child = Im.Child.Begin("DesignList"u8, Im.ContentRegion.Available);
+        if (!child)
+            return;
+
+        base.Draw();
+    }
 
     protected override FileSystemCache<DesignFileSystemCache.DesignData> CreateCache()
         => new DesignFileSystemCache(this);
