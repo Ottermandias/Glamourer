@@ -140,8 +140,10 @@ public sealed class StateListener : IDisposable, IRequiredService
              && actor.AsCharacter->GetObjectKind() is ObjectKind.EventNpc;
             switch (UpdateBaseData(actor, _creatingState, modelId, args.Customize, args.EquipData))
             {
-                // TODO 20260824 handle right
-                case UpdateState.Change:      break;
+                case UpdateState.Change:
+                    // For a change in the model ID, we reset all changes and set the glamourer state back to the game state.
+                    _creatingState.ModelData = _creatingState.BaseData;
+                    break;
                 case UpdateState.Transformed: break;
                 case UpdateState.NoChange:
 
@@ -421,24 +423,33 @@ public sealed class StateListener : IDisposable, IRequiredService
         var actorArmor = actor.GetArmor(slot);
         var fistWeapon = FistWeaponGauntletHack();
 
+        // Another hat hack.
+        if (armor.Set == 1 && armor.Variant == byte.MaxValue)
+            armor = CharacterArmor.Empty;
+        if (actorArmor.Set == 1 && actorArmor.Variant == byte.MaxValue)
+            actorArmor = CharacterArmor.Empty;
+
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
         if (actorArmor.Value != armor.Value)
         {
             // Update base data in case hat visibility is off.
-            if (slot is EquipSlot.Head && armor.Value == 0)
+            if (slot is EquipSlot.Head)
             {
-                if (actor.IsTransformed)
-                    return UpdateState.Transformed;
-
-                if (actorArmor.Value != state.BaseData.Armor(EquipSlot.Head).Value)
+                if (armor.Value is 0)
                 {
-                    var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
-                    state.BaseData.SetItem(EquipSlot.Head, item);
-                    state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stains);
-                    return UpdateState.Change;
-                }
+                    if (actor.IsTransformed)
+                        return UpdateState.Transformed;
 
-                return UpdateState.HatHack;
+                    if (actorArmor.Value != state.BaseData.Armor(EquipSlot.Head).Value)
+                    {
+                        var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
+                        state.BaseData.SetItem(EquipSlot.Head, item);
+                        state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stains);
+                        return UpdateState.Change;
+                    }
+
+                    return UpdateState.HatHack;
+                }
             }
 
             if (!fistWeapon)

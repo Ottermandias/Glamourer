@@ -273,10 +273,22 @@ public sealed unsafe class AdvancedDyePopup(
         // The downwards offset is implicit through child position.
         if (config.KeepAdvancedDyesAttached)
         {
-            var position = Im.Window.Position;
-            position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            var position      = Im.Window.Position;
+            var rightPosition = position.X + Im.Window.Size.X + Im.Style.WindowPadding.X;
             if (centered)
+            {
                 position.Y += (Im.Window.Size.Y - height) * 0.5f;
+                var display        = Im.Viewport.Main.Position + Im.Viewport.Main.Size;
+                if (display.X < rightPosition + width)
+                    position.X -= Im.Style.WindowPadding.X + width;
+                else
+                    position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            }
+            else
+            {
+                position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            }
+
             Im.Window.SetNextPosition(position);
             flags |= WindowFlags.NoMove;
         }
@@ -592,7 +604,8 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var tmp      = float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value;
         var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
-        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} G" : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} G" : "%.1f G"u8, 0.001f, minValue,
+                Math.Max(0.01f, 0.005f * value),
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -637,7 +650,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragRoughness(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultRoughness : value) * 100f;
-        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Rg" : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Rg" : "%.0f%% Rg"u8, 0f, 100f, 0.25f,
+                SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
@@ -667,7 +681,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragMetalness(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultMetalness : value) * 100f;
-        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Mt" : "%.0f%% Mt"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Mt" : "%.0f%% Mt"u8, 0f, 100f, 0.25f,
+                SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
@@ -760,7 +775,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSphereMapMask(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSphereMapMask : value) * 100f;
-        if (!Im.Drag("##SphereMapMask"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} S" : "%.0f%% S"u8, 0f, 100f * (float)Half.MaxValue, 0.25f,
+        if (!Im.Drag("##SphereMapMask"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} S" : "%.0f%% S"u8, 0f, 100f * (float)Half.MaxValue,
+                0.25f,
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 

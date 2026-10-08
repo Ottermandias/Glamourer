@@ -380,10 +380,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
                         foreach (var value in prop.Value.EnumerateArray())
                         {
                             if (value.ValueKind is JsonValueKind.String)
-                                data.Options.Add((Guid.Empty, value.GetString()!), (byte)OptionState.Enabled);
+                                data.Options.TryAdd((Guid.Empty, value.GetString()!), (byte)OptionState.Enabled);
                         }
 
-                    preset.Settings.Add((Guid.Empty, prop.Name), data);
+                    preset.Settings.TryAdd((Guid.Empty, prop.Name), data);
                 }
 
             return preset;
