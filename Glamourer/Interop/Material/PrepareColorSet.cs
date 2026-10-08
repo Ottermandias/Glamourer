@@ -158,7 +158,7 @@ public sealed unsafe class PrepareColorSet
         var flags1 = material->AdditionalData[0];
         if ((flags1 & 0xF0) is 0)
         {
-            ptr = (ushort*)material + 0x100;
+            ptr = (ushort*)material->DataSet + 0x100;
             return true;
         }
 
