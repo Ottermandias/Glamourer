@@ -34,7 +34,7 @@ public sealed unsafe class PrepareColorSet
         : base("Prepare Color Set", log)
     {
         _createNewModel = createNewModel;
-        _task            = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
+        _task           = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
     }
 
     private readonly Task<Hook<Delegate>?> _task;
@@ -87,14 +87,15 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        var newTable = *(ColorTable.Table*)material->DataSet;
-        if (GetDyeTable(material, out var dyeTable))
+        var newTable   = *(ColorTable.Table*)material->DataSet;
+        var stainTable = (ushort*)material->StainTable;
+        if (stainTable is not null)
         {
             if (stainIds.Stain1.Id is not 0)
-                material->ReadStainingTemplate(dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
+                material->ReadStainingTemplate(stainTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
 
             if (stainIds.Stain2.Id is not 0)
-                material->ReadStainingTemplate(dyeTable, stainIds.Stain2.Id, (Half*)&newTable, 1);
+                material->ReadStainingTemplate(stainTable, stainIds.Stain2.Id, (Half*)&newTable, 1);
         }
 
         table = newTable;
@@ -112,8 +113,8 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        var handle = (MaterialResourceHandle*)model.AsCharacterBase->Materials[idx];
-        if (handle == null)
+        var handle = model.AsCharacterBase->Materials[idx];
+        if (handle is null)
         {
             mode  = ColorRow.Mode.Dawntrail;
             table = default;
@@ -147,24 +148,4 @@ public sealed unsafe class PrepareColorSet
             : handle->ShpkName.AsSpan().SequenceEqual("characterlegacy.shpk"u8)
                 ? ColorRow.Mode.Legacy
                 : ColorRow.Mode.Dawntrail;
-
-    /// <summary> Get the correct dye table for a material. </summary>
-    private static bool GetDyeTable(MaterialResourceHandle* material, out ushort* ptr)
-    {
-        ptr = null;
-        if (material->AdditionalDataSize is 0 || material->AdditionalData is null)
-            return false;
-
-        var flags1 = material->AdditionalData[0];
-        if ((flags1 & 0xF0) is 0)
-        {
-            ptr = (ushort*)material + 0x100;
-            return true;
-        }
-
-        var flags2 = material->AdditionalData[1];
-        var offset = 4 * (1 << (flags1 >> 4)) * (1 << (flags2 & 0x0F));
-        ptr = (ushort*)material->DataSet + offset;
-        return true;
-    }
 }
