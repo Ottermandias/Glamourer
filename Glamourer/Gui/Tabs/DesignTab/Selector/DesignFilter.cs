@@ -1,17 +1,74 @@
 ﻿using Glamourer.Config;
 using ImSharp;
 using Luna;
+using Glamourer.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, DesignFileSystemCache.DesignData, DesignFilterToken>,
     IFileSystemFilter<DesignFileSystemCache.DesignData>, IUiService
 {
-    public DesignFilter(Configuration config)
+    private readonly ClanGenderFilter _clanGender;
+
+    public DesignFilter(Configuration config, CustomizeService customize)
     {
+        _clanGender = new ClanGenderFilter(customize);
         if (config.RememberDesignFilter)
             Set(config.Filters.DesignFilter);
         FilterChanged += () => config.Filters.DesignFilter = Text;
+    }
+
+    private bool DrawCombo()
+    {
+        using var color = ImGuiColor.Button.Push(LunaStyle.AttentionBackground, !_clanGender.IsEmpty);
+        using var combo = Im.Combo.Begin("##combo"u8, StringU8.Empty,
+            ComboFlags.NoPreview | ComboFlags.HeightLargest | ComboFlags.PopupAlignLeft);
+
+        if (Im.Item.MiddleClicked())
+        {
+            Im.Id.ClearActive();
+            return Clear();
+        }
+
+        Im.Tooltip.OnHover("Filter designs for clan and gender.\nMiddle-Click to clear all filters, including the text-filter."u8);
+
+        if (!combo)
+            return false;
+
+        var changes = _clanGender.Draw();
+        if (changes)
+            InvokeEvent();
+
+        return changes;
+    }
+
+    public override bool DrawFilter(ReadOnlySpan<byte> label, Vector2 availableRegion)
+    {
+        var filterRegion = availableRegion with { X = availableRegion.X - Im.Style.FrameHeight };
+        var ret          = base.DrawFilter(label, filterRegion);
+        Im.Line.NoSpacing();
+        ret |= DrawCombo();
+
+        return ret;
+    }
+
+    public override bool Clear()
+    {
+        var changes = _clanGender.Clear();
+        if (!SetInternal(string.Empty) && !changes)
+            return false;
+
+        InvokeEvent();
+        return true;
+    }
+
+    public override bool IsEmpty
+        => base.IsEmpty && _clanGender.IsEmpty;
+
+    public override bool WouldBeVisible(in DesignFileSystemCache.DesignData cacheItem, int globalIndex)
+    {
+        var customize = cacheItem.Node.Value.DesignData.Customize;
+        return _clanGender.Matches(customize.Clan, customize.Gender) && base.WouldBeVisible(cacheItem, globalIndex);
     }
 
     protected override void DrawTooltip()
@@ -111,6 +168,9 @@ public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, Design
 
     public bool WouldBeVisible(in FileSystemFolderCache folder)
     {
+        if (!_clanGender.IsEmpty)
+            return false;
+
         switch (State)
         {
             case FilterState.NoFilters: return true;

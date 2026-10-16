@@ -20,6 +20,9 @@ public sealed class StateChanged(LunaLogger log)
 
         /// <seealso cref="EditorHistory.OnStateChanged" />
         EditorHistory = -1000,
+
+        /// <seealso cref="Gui.Tabs.ActorTab.ActorSelector" />
+        ActorSelector = -2000,
     }
 
     /// <summary> Arguments for the StateChanged event. </summary>
