@@ -77,6 +77,7 @@ public sealed class FestivalNotification(Configuration config, IDalamudPluginInt
         {
             config.FestivalMode      = _doNotAskAgain ? FestivalSetting.NeverAskYes : FestivalSetting.AskYes;
             config.LastFestivalPopup = DateOnly.FromDateTime(DateTime.Now);
+            config.Save();
             args.Notification.DismissNow();
         }
 
@@ -96,6 +97,7 @@ public sealed class FestivalNotification(Configuration config, IDalamudPluginInt
         {
             config.FestivalMode      = _doNotAskAgain ? FestivalSetting.NeverAskNo : FestivalSetting.AskNo;
             config.LastFestivalPopup = DateOnly.FromDateTime(DateTime.Now);
+            config.Save();
             args.Notification.DismissNow();
         }
     }
