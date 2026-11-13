@@ -108,7 +108,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
                     var last2 = _lastItems[EquipSlot.LFinger.ToIndex()];
                     if (last2.Valid)
                         Im.Text(
-                            $"{prefix}Shift + Control + Right-Click to re-apply {last.Name} to current actor (Left Finger).");
+                            $"{prefix}Shift + Control + Right-Click to re-apply {last2.Name} to current actor (Left Finger).");
                 }
 
                 break;
@@ -175,10 +175,10 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
                         SetLastItem(EquipSlot.RFinger, default, state);
                         _stateManager.ChangeItem(state, EquipSlot.RFinger, last, ApplySettings.Manual);
                         break;
-                    case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()].Valid:
-                        Glamourer.Log.Debug($"Re-Applying {last.Name} to Left Finger.");
+                    case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()] is { Valid: true} last2:
+                        Glamourer.Log.Debug($"Re-Applying {last2.Name} to Left Finger.");
                         SetLastItem(EquipSlot.LFinger, default, state);
-                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, ApplySettings.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last2, ApplySettings.Manual);
                         break;
                 }
 
