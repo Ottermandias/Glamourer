@@ -36,6 +36,9 @@ public enum DesignPanelFlag : uint
 
     [Name("Debug Data")]
     DebugData = 0x0200,
+
+    [Name("Customize+")]
+    CustomizePlus = 0x0400,
 }
 
 public static partial class DesignPanelFlagExtensions

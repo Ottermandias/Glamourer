@@ -3,6 +3,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Automation;
 using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
+using Glamourer.Interop.CustomizePlus;
 using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.GameData.Structs;
@@ -37,6 +38,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         RevertAdvancedDyes     = other.RevertAdvancedDyes;
         Color                  = other.Color;
         AssociatedMods         = new SortedList<ModIdentifier, SettingPresetData>(other.AssociatedMods, ModIdentifierComparer.Instance);
+        CustomizePlusActions   = new Dictionary<Guid, CustomizePlusAction>(other.CustomizePlusActions);
         Links                  = Links.Clone();
     }
 
@@ -61,6 +63,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public DataPath                 Path                   { get; }               = new();
 
     public SortedList<ModIdentifier, SettingPresetData> AssociatedMods { get; private set; } = new(ModIdentifierComparer.Instance);
+    public Dictionary<Guid, CustomizePlusAction> CustomizePlusActions { get; private set; } = [];
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -105,6 +108,17 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     #region Serialization
 
     public new void Serialize(Utf8JsonWriter j)
+        => Serialize(j, true);
+
+    public byte[] ToShareJson()
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions))
+            Serialize(writer, false);
+        return stream.ToArray();
+    }
+
+    private void Serialize(Utf8JsonWriter j, bool includeCustomizePlusActions)
     {
         j.WriteStartObject();
         j.WriteNumber("FileVersion"u8, FileVersion);
@@ -136,6 +150,14 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         SerializeParameters(j);
         SerializeMaterials(j);
         SerializeMods(j);
+        if (includeCustomizePlusActions && CustomizePlusActions.Count > 0)
+        {
+            j.WriteStartObject("CustomizePlusProfiles"u8);
+            foreach (var (id, action) in CustomizePlusActions)
+                if (action is not CustomizePlusAction.Ignore)
+                    j.WriteNumber(id.ToString(), (byte)action);
+            j.WriteEndObject();
+        }
         Links.Serialize(j, "Links"u8);
         j.WriteEndObject();
     }
@@ -296,6 +318,12 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         LoadEquip(items, json.TryReadObject("Equipment"u8,              out var e) ? e : null, design, design.Name, true);
         LoadBonus(items, design, json.TryReadObject("Bonus"u8,          out var b) ? b : null);
         LoadMods(json.TryReadArray("Mods"u8, out var m) ? m : null, design, version);
+        if (json.TryReadObject("CustomizePlusProfiles"u8, out var profiles))
+            foreach (var entry in profiles.EnumerateObject())
+                if (Guid.TryParse(entry.Name, out var profileId) && profileId != Guid.Empty && entry.Value.ValueKind is JsonValueKind.Number
+                 && entry.Value.TryGetByte(out var value)
+                 && value is (byte)CustomizePlusAction.Enable or (byte)CustomizePlusAction.Disable)
+                    design.CustomizePlusActions[profileId] = (CustomizePlusAction)value;
         LoadParameters(json.TryReadObject("Parameters"u8,   out var p) ? p : null, design, design.Name);
         LoadMaterials(json.TryReadObject("Materials"u8,     out var mat) ? mat : null, design, design.Name);
         LoadLinks(linkLoader, json.TryReadObject("Links"u8, out var l) ? l : null, design);

@@ -7,6 +7,7 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Material;
+using Glamourer.Interop.CustomizePlus;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -33,8 +34,9 @@ public sealed class StateManager(
     JobChangeState jobChange,
     DesignMerger merger,
     ModSettingApplier modApplier,
+    CustomizePlusIpc customizePlus,
     GPoseService gPose)
-    : StateEditor(editor, applier, changeEvent, finalizeEvent, jobChange, config, items, merger, modApplier, gPose),
+    : StateEditor(editor, applier, changeEvent, finalizeEvent, jobChange, config, items, merger, modApplier, customizePlus, gPose),
         IReadOnlyDictionary<ActorIdentifier, ActorState>, IService
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];

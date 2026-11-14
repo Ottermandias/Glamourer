@@ -31,6 +31,7 @@ public class DesignPanel : IPanel
     private readonly ActorObjectManager       _objects;
     private readonly EquipmentDrawer          _equipmentDrawer;
     private readonly ModAssociationsTab       _modAssociations;
+    private readonly CustomizePlusTab          _customizePlus;
     private readonly Configuration            _config;
     private readonly DesignDetailTab          _designDetails;
     private readonly ImportService            _importService;
@@ -45,6 +46,7 @@ public class DesignPanel : IPanel
         ActorObjectManager objects,
         EquipmentDrawer equipmentDrawer,
         ModAssociationsTab modAssociations,
+        CustomizePlusTab customizePlus,
         Configuration config,
         DesignDetailTab designDetails,
         DesignConverter converter,
@@ -61,6 +63,7 @@ public class DesignPanel : IPanel
         _objects             = objects;
         _equipmentDrawer     = equipmentDrawer;
         _modAssociations     = modAssociations;
+        _customizePlus       = customizePlus;
         _config              = config;
         _designDetails       = designDetails;
         _importService       = importService;
@@ -490,6 +493,7 @@ public class DesignPanel : IPanel
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
+        _customizePlus.Draw();
         _designLinkDrawer.Draw();
     }
 

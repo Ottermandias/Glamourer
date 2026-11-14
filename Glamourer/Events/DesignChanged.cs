@@ -48,6 +48,9 @@ public sealed class DesignChanged(LunaLogger log)
         /// <summary> An existing design had an existing associated mod updated. </summary>
         UpdatedMod,
 
+        /// <summary> A Customize+ profile action was changed for an existing design. </summary>
+        ChangedCustomizePlusProfile,
+
         /// <summary> An existing design had a link to a different design added, removed or moved. </summary>
         ChangedLink,
 

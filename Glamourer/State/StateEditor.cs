@@ -6,6 +6,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
+using Glamourer.Interop.CustomizePlus;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Luna;
@@ -25,6 +26,7 @@ public class StateEditor(
     ItemManager items,
     DesignMerger merger,
     ModSettingApplier modApplier,
+    CustomizePlusIpc customizePlus,
     GPoseService gPose) : IDesignEditor
 {
     protected readonly InternalStateEditor Editor         = editor;
@@ -460,6 +462,8 @@ public class StateEditor(
             actors)); // FIXME: maybe later
         if (settings.IsFinal)
             StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.DesignApplied, actors));
+
+        customizePlus.Apply(mergedDesign.CustomizePlusActions);
 
         return;
 

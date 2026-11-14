@@ -7,6 +7,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
+using Glamourer.Interop.CustomizePlus;
 using Glamourer.Services;
 using Luna;
 using Penumbra.GameData.DataContainers;
@@ -307,6 +308,25 @@ public sealed class DesignManager : DesignEditor, IService
             Glamourer.Log.Debug($"Added associated mod {mod.Identifier} from design {design.Identifier}.");
             DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings)));
         }
+    }
+
+    public void SetCustomizePlusAction(Design design, Guid id, CustomizePlusAction action)
+    {
+        if (design.WriteProtected() || id == Guid.Empty)
+            return;
+
+        var old = design.CustomizePlusActions.GetValueOrDefault(id);
+        if (old == action)
+            return;
+
+        if (action is CustomizePlusAction.Ignore)
+            design.CustomizePlusActions.Remove(id);
+        else
+            design.CustomizePlusActions[id] = action;
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedCustomizePlusProfile, design,
+            new CustomizePlusActionTransaction(id, old, action)));
     }
 
     /// <summary> Set the write protection status of a design. </summary>
