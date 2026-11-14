@@ -22,10 +22,10 @@ public sealed class DesignConverter(
     public const byte Version = 6;
 
     public JsonElement ShareJObject(DesignBase design)
-        => design.ToElement();
+        => design is Design saved ? ShareJObject(saved) : design.ToElement();
 
     public JsonElement ShareJObject(Design design)
-        => design.ToElement();
+        => JsonElement.Parse(design.ToShareJson());
 
     public JsonElement ShareJObject(ActorState state, in ApplicationRules rules)
     {
@@ -34,10 +34,10 @@ public sealed class DesignConverter(
     }
 
     public byte[] ShareBase64(Design design)
-        => ToBase64(design.ToJson());
+        => ToBase64(design.ToShareJson());
 
     public byte[] ShareBase64(DesignBase design)
-        => ToBase64(design.ToJson());
+        => design is Design saved ? ShareBase64(saved) : ToBase64(design.ToJson());
 
     public byte[] ShareBase64(ActorState state, in ApplicationRules rules)
         => ShareBase64(state.ModelData, state.Materials, rules);

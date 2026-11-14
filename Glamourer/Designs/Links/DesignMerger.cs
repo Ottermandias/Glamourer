@@ -55,6 +55,9 @@ public class DesignMerger(
             ReduceCrests(data, collection.Crest, ret, source);
             ReduceParameters(data, collection.Parameters, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
+            if (design is Design profileDesign)
+                foreach (var (id, action) in profileDesign.CustomizePlusActions)
+                    ret.CustomizePlusActions.TryAdd(id, action);
             if (type.HasFlag(ApplicationType.GearCustomization))
                 ReduceMaterials(design, mutableMaterialSlots, ret);
             if (design.ForcedRedraw)
