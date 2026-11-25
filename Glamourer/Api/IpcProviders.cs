@@ -29,6 +29,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.ApplyDesign.Provider(pi, api.Designs),
             IpcSubscribers.ApplyDesignName.Provider(pi, api.Designs),
             IpcSubscribers.AddDesign.Provider(pi, api.Designs),
+            IpcSubscribers.UpdateDesign.Provider(pi, api.Designs),
             IpcSubscribers.DeleteDesign.Provider(pi, api.Designs),
             IpcSubscribers.GetDesignBase64.Provider(pi, api.Designs),
             IpcSubscribers.GetDesignJObject.Provider(pi, api.Designs),
