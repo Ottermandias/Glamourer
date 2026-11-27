@@ -7,7 +7,7 @@ namespace Glamourer.Api;
 public class GlamourerApi(Configuration config, DesignsApi designs, StateApi state, ItemsApi items, PluginApi plugin) : IGlamourerApi, IApiService
 {
     public const int CurrentApiVersionMajor = 1;
-    public const int CurrentApiVersionMinor = 8;
+    public const int CurrentApiVersionMinor = 9;
 
     public (int Major, int Minor) ApiVersion
         => (CurrentApiVersionMajor, CurrentApiVersionMinor);

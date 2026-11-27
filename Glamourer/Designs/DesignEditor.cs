@@ -341,7 +341,7 @@ public class DesignEditor(
         var design = (Design)data;
         UndoStore[design.Identifier] = (design.DesignData, design.GetMaterialData().ToArray());
         foreach (var index in MetaExtensions.AllRelevant.Where(other.DoApplyMeta))
-            design.GetDesignDataRef().SetMeta(index, other.DesignData.GetMeta(index));
+            ChangeMetaState(design, index, other.DesignData.GetMeta(index));
 
         if (!design.DesignData.IsHuman)
             return;
